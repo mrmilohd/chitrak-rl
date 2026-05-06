@@ -13,7 +13,7 @@ class GaitController(Node):
         self.declare_parameter('geometry.length', 30.0)
         self.declare_parameter('geometry.width', 20.0)
         # Gait parameters
-        self.declare_parameter('gait.step_height', 2.0)
+        self.declare_parameter('gait.step_height', 2.0)  # TODO: If required, make this dynamic
         self.declare_parameter('gait.min_step_frequency', 0.25)
         self.declare_parameter('gait.max_step_frequency', 1.0)
         self.declare_parameter('gait.max_step_length', 5.0)
@@ -93,27 +93,20 @@ class GaitController(Node):
             leg_gait_params.step_direction = theta
             leg_gait_params.step_height = self.step_height
 
+            # TODO: Make an IMU node calculate this based on teleop commands and robot stability,
+            # and subscribe to it here instead of hardcoding it.
+            leg_gait_params.hip_height = 15.0
+
             leg_gait_params.frequency = frequency
             if self.gait_type == 'walk':
                 # FR=0, BL=0.25, FL=0.5, BR=0.75
-                leg_gait_params.phase = 0.25 * i
+                leg_gait_params.phase_offset = 0.25 * i
             elif self.gait_type == 'trot':
                 # FR and BL in phase, FL and BR in phase
-                leg_gait_params.phase = 0.5 * (i % 2)
+                leg_gait_params.phase_offset = 0.5 * (i % 2)
 
             msg.leg_gait_params.append(leg_gait_params)
-        
-        self.get_logger().debug(f"{'leg':<3} {'step_length':>10} {'step_direction':>10} {'step_height':>10} {'frequency':>8} {'phase':>8}")
-        for i, leg in enumerate(['FR', 'BL', 'FL', 'BR']):
-            lgp = msg.leg_gait_params[i]
-            self.get_logger().debug(
-                f"{leg:<3} "
-                f"{lgp.step_length:>10.2f} "
-                f"{lgp.step_direction:>10.2f} "
-                f"{lgp.step_height:>10.2f} "
-                f"{lgp.frequency:>8.2f} "
-                f"{lgp.phase:>8.2f}"
-            )
+
         self.publisher_.publish(msg)
 
 def main(args=None):
