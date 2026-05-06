@@ -12,9 +12,6 @@ class GaitController(Node):
         # Geometry parameters
         self.declare_parameter('geometry.length', 30.0)
         self.declare_parameter('geometry.width', 20.0)
-        self.L = self.get_parameter('geometry.length').value
-        self.W = self.get_parameter('geometry.width').value
-
         # Gait parameters
         self.declare_parameter('gait.step_height', 2.0)
         self.declare_parameter('gait.min_step_frequency', 0.25)
@@ -22,6 +19,8 @@ class GaitController(Node):
         self.declare_parameter('gait.max_step_length', 5.0)
         self.declare_parameter('gait.type', 'walk')
 
+        self.L = self.get_parameter('geometry.length').value
+        self.W = self.get_parameter('geometry.width').value
         self.step_height = self.get_parameter('gait.step_height').value
         self.min_step_frequency = self.get_parameter('gait.min_step_frequency').value
         self.max_step_frequency = self.get_parameter('gait.max_step_frequency').value
