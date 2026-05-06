@@ -26,6 +26,7 @@ class KeyboardTeleop(Node):
 
         self.get_logger().info("Keyboard teleop node started.")
         self.get_logger().info("Use WASD for linear, QE for rotation, X to stop")
+        self.get_logger().info(f"vx: {self.vx:.2f}, vy: {self.vy:.2f}, wz: {self.wz:.2f}")
     
     def on_press(self, key):
         try:
@@ -59,12 +60,13 @@ class KeyboardTeleop(Node):
             self.vy = 0.0
             self.wz = 0.0
 
-        # Round to avoid floating point accumulation errors
-        self.vx = round(self.vx, 2)
-        self.vy = round(self.vy, 2)
-        self.wz = round(self.wz, 2)
+        if key in ['w', 's', 'a', 'd', 'q', 'e', 'x']:
+            # Round to avoid floating point accumulation errors
+            self.vx = round(self.vx, 2)
+            self.vy = round(self.vy, 2)
+            self.wz = round(self.wz, 2)
 
-        self.get_logger().info(f"vx: {self.vx:.2f}, vy: {self.vy:.2f}, wz: {self.wz:.2f}")
+            self.get_logger().info(f"vx: {self.vx:.2f}, vy: {self.vy:.2f}, wz: {self.wz:.2f}")
 
 def main(args=None):
     rclpy.init(args=args)
