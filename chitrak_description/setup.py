@@ -12,9 +12,9 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
 
-        # Install URDF files
+        # Install config, URDF, mesh files
+        ('share/' + package_name + '/config', glob('config/*.yaml')),
         ('share/' + package_name + '/urdf', glob('urdf/*.urdf')),
-        # Install Mesh files
         ('share/' + package_name + '/meshes', glob('meshes/*.STL')),
     ],
     install_requires=['setuptools'],

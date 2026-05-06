@@ -1,10 +1,10 @@
 /**:
   ros__parameters:
     geometry:
-      length: 30
-      width: 20
+      length: 30.0
+      width: 20.0
     gait:
       min_step_frequency: 0.25
-      max_step_frequency: 0.5
-      max_step_length: 5
-      step_height: 5
+      max_step_frequency: 1.0
+      max_step_length: 5.0
+      step_height: 2.0
