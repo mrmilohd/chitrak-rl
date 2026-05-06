@@ -21,7 +21,7 @@ setup(
     zip_safe=True,
     maintainer='Shravan Deva',
     maintainer_email='devashravan7@gmail.com',
-    description='URDF description for the Chitrak robot',
+    description='URDF description for the Chitrak',
     license='MIT',
     extras_require={
         'test': [

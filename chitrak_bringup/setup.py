@@ -20,7 +20,7 @@ setup(
     zip_safe=True,
     maintainer='Shravan Deva',
     maintainer_email='devashravan7@gmail.com',
-    description='Bringup package for Chitrak robot',
+    description='Bringup package for Chitrak',
     license='MIT',
     extras_require={
         'test': [

@@ -3,7 +3,7 @@
 <package format="3">
   <name>chitrak_description</name>
   <version>0.0.0</version>
-  <description>Description package of Chitrak robot</description>
+  <description>Description package of Chitrak</description>
   <maintainer email="devashravan7@gmail.com">Shravan Deva</maintainer>
   <license>MIT</license>
 
