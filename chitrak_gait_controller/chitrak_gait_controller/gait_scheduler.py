@@ -1,17 +1,14 @@
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Twist
+from chitrak_msgs.msg import LegMotionCommand
+from chitrak_msgs.msg import LegMotionCommandArray
 from chitrak_msgs.msg import LegGaitParams
-from chitrak_msgs.msg import LegGaitParamsArray
-import math
+from chitrak_msgs.msg import LegGaitParamsArray 
 
-class GaitController(Node):
+class GaitScheduler(Node):
     def __init__(self):
-        super().__init__('gait_controller')
-        
-        # Geometry parameters
-        self.declare_parameter('geometry.length', 30.0)
-        self.declare_parameter('geometry.width', 20.0)
+        super().__init__('gait_scheduler')
+
         # Gait parameters
         self.declare_parameter('gait.step_height', 2.0)  # TODO: If required, make this dynamic
         self.declare_parameter('gait.min_step_frequency', 0.25)
@@ -19,22 +16,25 @@ class GaitController(Node):
         self.declare_parameter('gait.max_step_length', 5.0)
         self.declare_parameter('gait.type', 'walk')
 
-        self.L = self.get_parameter('geometry.length').value
-        self.W = self.get_parameter('geometry.width').value
         self.step_height = self.get_parameter('gait.step_height').value
         self.min_step_frequency = self.get_parameter('gait.min_step_frequency').value
         self.max_step_frequency = self.get_parameter('gait.max_step_frequency').value
         self.max_step_length = self.get_parameter('gait.max_step_length').value
         self.gait_type = self.get_parameter('gait.type').value
 
-        self.last_cmd_vel = Twist()
-        self.subscription = self.create_subscription(Twist, '/chitrak/cmd_vel', self.cmd_vel_callback, 10)
+        self.leg_motion_commands = LegMotionCommandArray()
+        # Set default leg motion commands to avoid errors before the first cmd_vel is received
+        self.leg_motion_commands.leg_motion_commands = [
+            LegMotionCommand(magnitude=0.0, direction=0.0)
+            for _ in range(4)
+        ]
+        self.subscription_ = self.create_subscription(LegMotionCommandArray, '/chitrak/leg_motion_commands', self.leg_motion_callback, 10)
 
         self.publisher_ = self.create_publisher(LegGaitParamsArray, '/chitrak/leg_gait_params', 10)
-        self.timer = self.create_timer(0.1, self.publish_gait_params) # 10 Hz
+        self.timer = self.create_timer(0.1, self.publish_gait_params) # 10 Hz      
 
-    def cmd_vel_callback(self, msg):
-        self.last_cmd_vel = msg
+    def leg_motion_callback(self, msg):
+        self.leg_motion_commands = msg
 
     def compute_step_params(self, speed):
         if speed < 0.1:
@@ -52,52 +52,38 @@ class GaitController(Node):
             f = min(max(f, self.min_step_frequency), self.max_step_frequency)
 
         return d, f
-    
+
     def publish_gait_params(self):
-        vx = self.last_cmd_vel.linear.x
-        vy = self.last_cmd_vel.linear.y
-        omega = self.last_cmd_vel.angular.z
+        # Leg commands
+        v_fr = self.leg_motion_commands.leg_motion_commands[0].magnitude
+        v_bl = self.leg_motion_commands.leg_motion_commands[1].magnitude
+        v_fl = self.leg_motion_commands.leg_motion_commands[2].magnitude
+        v_br = self.leg_motion_commands.leg_motion_commands[3].magnitude
 
-        # Inverse differential kinematics
-        vr = vx + (self.W / 2.0) * omega
-        vl = vx - (self.W / 2.0) * omega
-        vf = vy + (self.L / 2.0) * omega
-        vb = vy - (self.L / 2.0) * omega
+        theta_fr = self.leg_motion_commands.leg_motion_commands[0].direction
+        theta_bl = self.leg_motion_commands.leg_motion_commands[1].direction
+        theta_fl = self.leg_motion_commands.leg_motion_commands[2].direction
+        theta_br = self.leg_motion_commands.leg_motion_commands[3].direction
 
-        # Leg speeds and angles
-        v_fr = math.hypot(vr, vf)
-        v_bl = math.hypot(vl, vb)
-        v_fl = math.hypot(vl, vf)
-        v_br = math.hypot(vr, vb)
-
-        theta_fr = math.degrees(math.atan2(vf, vr)) if v_fr > 0 else 0.0
-        theta_bl = math.degrees(math.atan2(vb, vl)) if v_bl > 0 else 0.0
-        theta_fl = math.degrees(math.atan2(vf, vl)) if v_fl > 0 else 0.0
-        theta_br = math.degrees(math.atan2(vb, vr)) if v_br > 0 else 0.0
-
-        msg = LegGaitParamsArray()
-        msg.leg_gait_params = []
-
-        leg_velocities = [
+        leg_commands = [
             (v_fr, theta_fr),
             (v_bl, theta_bl),
             (v_fl, theta_fl),
             (v_br, theta_br)
         ]
 
-        for i, (v, theta) in enumerate(leg_velocities):
+        msg = LegGaitParamsArray()
+        msg.leg_gait_params = []
+
+        for i, (v, theta) in enumerate(leg_commands):
             leg_gait_params = LegGaitParams()
 
-            step_length, frequency = self.compute_step_params(v)
+            step_length, step_frequency = self.compute_step_params(v)
             leg_gait_params.step_length = step_length
+            leg_gait_params.step_frequency = step_frequency
             leg_gait_params.step_direction = theta
             leg_gait_params.step_height = self.step_height
 
-            # TODO: Make an IMU node calculate this based on teleop commands and robot stability,
-            # and subscribe to it here instead of hardcoding it.
-            leg_gait_params.hip_height = 15.0
-
-            leg_gait_params.frequency = frequency
             if self.gait_type == 'walk':
                 # FR=0, BL=0.25, FL=0.5, BR=0.75
                 leg_gait_params.phase_offset = 0.25 * i
@@ -105,18 +91,22 @@ class GaitController(Node):
                 # FR and BL in phase, FL and BR in phase
                 leg_gait_params.phase_offset = 0.5 * (i % 2)
 
+            # TODO: Make an IMU node calculate this based on teleop commands and robot stability,
+            # and subscribe to it here instead of hardcoding it.
+            leg_gait_params.hip_height = 15.0
+
             msg.leg_gait_params.append(leg_gait_params)
 
         self.publisher_.publish(msg)
 
 def main(args=None):
     rclpy.init(args=args)
-    gait_controller = GaitController()
+    gait_scheduler = GaitScheduler()
     
     try:
-        rclpy.spin(gait_controller)
+        rclpy.spin(gait_scheduler)
     finally:
-        gait_controller.destroy_node()
+        gait_scheduler.destroy_node()
         rclpy.shutdown()
 
 if __name__ == '__main__':

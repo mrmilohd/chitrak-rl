@@ -12,8 +12,10 @@ find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/LegGaitParams.msg"
-  "msg/LegGaitParamsArray.msg"
+"msg/LegGaitParams.msg"
+"msg/LegGaitParamsArray.msg"
+"msg/LegMotionCommand.msg"
+"msg/LegMotionCommandArray.msg"
 )
 
 if(BUILD_TESTING)

@@ -24,7 +24,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'gait_controller = chitrak_gait_controller.gait_controller:main',
+            'body_motion_planner = chitrak_gait_controller.body_motion_planner:main',
+            'gait_scheduler = chitrak_gait_controller.gait_scheduler:main',
         ],
     },
 )

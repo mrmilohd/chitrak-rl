@@ -15,15 +15,23 @@ def generate_launch_description():
         executable='keyboard_teleop',
         name='keyboard_teleop',
     )
-    # Launch the gait controller node
-    gait_controller_node = Node(
+    # Launch the body motion planner node
+    body_motion_planner_node = Node(
         package='chitrak_gait_controller',
-        executable='gait_controller',
-        name='gait_controller',
+        executable='body_motion_planner',
+        name='body_motion_planner',
+        parameters=[config_path],
+    )
+    # Launch the gait scheduler node
+    gait_scheduler_node = Node(
+        package='chitrak_gait_controller',
+        executable='gait_scheduler',
+        name='gait_scheduler',
         parameters=[config_path],
     )
 
     return LaunchDescription([
         keyboard_teleop_node,
-        gait_controller_node,
+        body_motion_planner_node,
+        gait_scheduler_node,
     ])
