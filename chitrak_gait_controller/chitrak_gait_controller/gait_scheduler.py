@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
-from chitrak_msgs.msg import LegMotionCommand
-from chitrak_msgs.msg import LegMotionCommandArray
+from chitrak_msgs.msg import LegAvgVelocity
+from chitrak_msgs.msg import LegAvgVelocityArray
 from chitrak_msgs.msg import LegGaitParams
 from chitrak_msgs.msg import LegGaitParamsArray 
 
@@ -22,19 +22,19 @@ class GaitScheduler(Node):
         self.max_step_length = self.get_parameter('gait.max_step_length').value
         self.gait_type = self.get_parameter('gait.type').value
 
-        self.leg_motion_commands = LegMotionCommandArray()
-        # Set default leg motion commands to avoid errors before the first cmd_vel is received
-        self.leg_motion_commands.leg_motion_commands = [
-            LegMotionCommand(magnitude=0.0, direction=0.0)
+        self.leg_avg_velocities = LegAvgVelocityArray()
+        # Set default leg average velocities to avoid errors before the first cmd_vel is received
+        self.leg_avg_velocities.leg_avg_velocities = [
+            LegAvgVelocity(magnitude=0.0, direction=0.0)
             for _ in range(4)
         ]
-        self.subscription_ = self.create_subscription(LegMotionCommandArray, '/chitrak/leg_motion_commands', self.leg_motion_callback, 10)
+        self.subscription_ = self.create_subscription(LegAvgVelocityArray, '/chitrak/leg_avg_velocities', self.leg_avg_velocities_callback, 10)
 
         self.publisher_ = self.create_publisher(LegGaitParamsArray, '/chitrak/leg_gait_params', 10)
         self.timer = self.create_timer(0.1, self.publish_gait_params) # 10 Hz      
 
-    def leg_motion_callback(self, msg):
-        self.leg_motion_commands = msg
+    def leg_avg_velocities_callback(self, msg):
+        self.leg_avg_velocities = msg
 
     def compute_step_params(self, speed):
         if speed < 0.1:
@@ -55,15 +55,15 @@ class GaitScheduler(Node):
 
     def publish_gait_params(self):
         # Leg commands
-        v_fr = self.leg_motion_commands.leg_motion_commands[0].magnitude
-        v_bl = self.leg_motion_commands.leg_motion_commands[1].magnitude
-        v_fl = self.leg_motion_commands.leg_motion_commands[2].magnitude
-        v_br = self.leg_motion_commands.leg_motion_commands[3].magnitude
+        v_fr = self.leg_avg_velocities.leg_avg_velocities[0].magnitude
+        v_bl = self.leg_avg_velocities.leg_avg_velocities[1].magnitude
+        v_fl = self.leg_avg_velocities.leg_avg_velocities[2].magnitude
+        v_br = self.leg_avg_velocities.leg_avg_velocities[3].magnitude
 
-        theta_fr = self.leg_motion_commands.leg_motion_commands[0].direction
-        theta_bl = self.leg_motion_commands.leg_motion_commands[1].direction
-        theta_fl = self.leg_motion_commands.leg_motion_commands[2].direction
-        theta_br = self.leg_motion_commands.leg_motion_commands[3].direction
+        theta_fr = self.leg_avg_velocities.leg_avg_velocities[0].direction
+        theta_bl = self.leg_avg_velocities.leg_avg_velocities[1].direction
+        theta_fl = self.leg_avg_velocities.leg_avg_velocities[2].direction
+        theta_br = self.leg_avg_velocities.leg_avg_velocities[3].direction
 
         leg_commands = [
             (v_fr, theta_fr),

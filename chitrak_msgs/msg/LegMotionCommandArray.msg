@@ -1,1 +1,0 @@
-LegMotionCommand[] leg_motion_commands
