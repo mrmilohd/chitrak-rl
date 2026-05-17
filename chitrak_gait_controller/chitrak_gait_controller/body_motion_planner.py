@@ -1,8 +1,8 @@
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
-from chitrak_msgs.msg import LegAvgVelocity
-from chitrak_msgs.msg import LegAvgVelocityArray
+from chitrak_msgs.msg import ChitrakLegPlanarVelocities
+from chitrak_msgs.msg import LegPlanarVelocity
 import math
 
 class BodyMotionPlanner(Node):
@@ -23,7 +23,7 @@ class BodyMotionPlanner(Node):
         self.last_cmd_vel.angular.z = 0.0
         self.subscription_ = self.create_subscription(Twist, '/chitrak/cmd_vel', self.cmd_vel_callback, 10)
 
-        self.publisher_ = self.create_publisher(LegAvgVelocityArray, '/chitrak/leg_avg_velocities', 10)
+        self.publisher_ = self.create_publisher(ChitrakLegPlanarVelocities, '/chitrak/leg_planar_velocities', 10)
         self.timer = self.create_timer(0.1, self.publish_leg_velocities) # 10 Hz
 
     def cmd_vel_callback(self, msg):
@@ -55,13 +55,16 @@ class BodyMotionPlanner(Node):
         theta_fl = math.degrees(math.atan2(vf, vl)) if v_fl > 0 else 0.0
         theta_br = math.degrees(math.atan2(vb, vr)) if v_br > 0 else 0.0
 
-        fr_avg_vel = LegAvgVelocity(magnitude=v_fr, direction=theta_fr)
-        bl_avg_vel = LegAvgVelocity(magnitude=v_bl, direction=theta_bl)
-        fl_avg_vel = LegAvgVelocity(magnitude=v_fl, direction=theta_fl)
-        br_avg_vel = LegAvgVelocity(magnitude=v_br, direction=theta_br)
+        fr_planar_vel = LegPlanarVelocity(magnitude=v_fr, direction=theta_fr)
+        bl_planar_vel = LegPlanarVelocity(magnitude=v_bl, direction=theta_bl)
+        fl_planar_vel = LegPlanarVelocity(magnitude=v_fl, direction=theta_fl)
+        br_planar_vel = LegPlanarVelocity(magnitude=v_br, direction=theta_br)
 
-        msg = LegAvgVelocityArray()
-        msg.leg_avg_velocities = [fr_avg_vel, bl_avg_vel, fl_avg_vel, br_avg_vel]
+        msg = ChitrakLegPlanarVelocities()
+        msg.front_right = fr_planar_vel
+        msg.back_left = bl_planar_vel
+        msg.front_left = fl_planar_vel
+        msg.back_right = br_planar_vel
 
         self.publisher_.publish(msg)
 

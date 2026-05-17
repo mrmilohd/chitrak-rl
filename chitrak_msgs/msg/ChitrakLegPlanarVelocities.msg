@@ -1,0 +1,4 @@
+LegPlanarVelocity front_right
+LegPlanarVelocity back_left
+LegPlanarVelocity front_left
+LegPlanarVelocity back_right

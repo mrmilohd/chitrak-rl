@@ -7,4 +7,4 @@
       min_step_frequency: 0.25
       max_step_frequency: 1.0
       max_step_length: 5.0
-      step_height: 2.0
+      step_height: 5.0
