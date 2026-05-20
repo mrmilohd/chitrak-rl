@@ -29,7 +29,7 @@ class BezierGaitGenerator(Node):
         self.compute_bezier_weights()
 
         self.publisher_ = self.create_publisher(LegEndPositions, '/chitrak/leg_end_positions', 10)
-        self.timer = self.create_timer(0.005, self.publish_leg_end_positions) # 100 Hz
+        self.timer = self.create_timer(0.01, self.publish_leg_end_positions) # 100 Hz
 
     def gait_params_callback(self, msg):
         self.gait_params = msg

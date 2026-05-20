@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'chitrak_gait_controller'
+package_name = 'chitrak_gait_planner'
 
 setup(
     name=package_name,
@@ -24,8 +24,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'body_motion_planner = chitrak_gait_controller.body_motion_planner:main',
-            'gait_scheduler = chitrak_gait_controller.gait_scheduler:main',
+            'body_motion_planner = chitrak_gait_planner.body_motion_planner:main',
+            'gait_scheduler = chitrak_gait_planner.gait_scheduler:main',
         ],
     },
 )

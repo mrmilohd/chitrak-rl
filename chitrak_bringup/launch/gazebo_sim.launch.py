@@ -17,14 +17,14 @@ def generate_launch_description():
     )
     # Launch the body motion planner node
     body_motion_planner_node = Node(
-        package='chitrak_gait_controller',
+        package='chitrak_gait_planner',
         executable='body_motion_planner',
         name='body_motion_planner',
         parameters=[config_path],
     )
     # Launch the gait scheduler node
     gait_scheduler_node = Node(
-        package='chitrak_gait_controller',
+        package='chitrak_gait_planner',
         executable='gait_scheduler',
         name='gait_scheduler',
         parameters=[config_path],
