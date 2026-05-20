@@ -38,9 +38,16 @@ def generate_launch_description():
         output="screen",
         arguments=["-d", rviz_config_path],
     )
+    # Visualize leg trajectories
+    viz_leg_trajectories_node = Node(
+        package="chitrak_leg_controller",
+        executable="viz_leg_trajectories",
+        output="screen",
+    )
 
     return LaunchDescription([
         rsp_node,
         jsp_node,
         rviz_node,
+        viz_leg_trajectories_node,
     ])

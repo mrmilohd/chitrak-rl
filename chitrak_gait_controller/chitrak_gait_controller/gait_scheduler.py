@@ -14,20 +14,20 @@ class GaitScheduler(Node):
         self.declare_parameter('gait.min_step_frequency', 0.25)
         self.declare_parameter('gait.max_step_frequency', 1.0)
         self.declare_parameter('gait.max_step_length', 5.0)
+        self.declare_parameter('gait.duty_factor', 0.8)  # TODO: If required, make this dynamic
         self.declare_parameter('gait.type', 'walk')
 
         self.step_height = self.get_parameter('gait.step_height').value
         self.min_step_frequency = self.get_parameter('gait.min_step_frequency').value
         self.max_step_frequency = self.get_parameter('gait.max_step_frequency').value
         self.max_step_length = self.get_parameter('gait.max_step_length').value
+        self.duty_factor = self.get_parameter('gait.duty_factor').value
         self.gait_type = self.get_parameter('gait.type').value
 
         self.leg_planar_velocities = ChitrakLegPlanarVelocities()
         # Set default leg average velocities to avoid errors before the first cmd_vel is received
-        self.leg_planar_velocities.front_right = LegPlanarVelocity(magnitude=0.0, direction=0.0)
-        self.leg_planar_velocities.back_left = LegPlanarVelocity(magnitude=0.0, direction=0.0)
-        self.leg_planar_velocities.front_left = LegPlanarVelocity(magnitude=0.0, direction=0.0)
-        self.leg_planar_velocities.back_right = LegPlanarVelocity(magnitude=0.0, direction=0.0)
+        for leg in ['front_right', 'back_left', 'front_left', 'back_right']:
+             setattr(self.leg_planar_velocities, leg, LegPlanarVelocity(magnitude=0.0, direction=0.0))
         self.subscription_ = self.create_subscription(ChitrakLegPlanarVelocities, '/chitrak/leg_planar_velocities', self.leg_planar_velocities_callback, 10)
 
         self.publisher_ = self.create_publisher(ChitrakGaitParams, '/chitrak/gait_params', 10)
@@ -38,7 +38,7 @@ class GaitScheduler(Node):
 
     def compute_step_params(self, speed):
         if speed < 0.1:
-            return 0.0, 0.0
+            return 0.0, self.min_step_frequency
 
         # try max frequency first
         f = self.max_step_frequency
@@ -54,55 +54,33 @@ class GaitScheduler(Node):
         return d, f
 
     def publish_gait_params(self):
-        # Leg commands
-        v_fr = self.leg_planar_velocities.front_right.magnitude
-        v_bl = self.leg_planar_velocities.back_left.magnitude
-        v_fl = self.leg_planar_velocities.front_left.magnitude
-        v_br = self.leg_planar_velocities.back_right.magnitude
-
-        theta_fr = self.leg_planar_velocities.front_right.direction
-        theta_bl = self.leg_planar_velocities.back_left.direction
-        theta_fl = self.leg_planar_velocities.front_left.direction
-        theta_br = self.leg_planar_velocities.back_right.direction
-
-        leg_commands = [
-            (v_fr, theta_fr),
-            (v_bl, theta_bl),
-            (v_fl, theta_fl),
-            (v_br, theta_br)
-        ]
-
         msg = ChitrakGaitParams()
 
-        for i, (v, theta) in enumerate(leg_commands):
+        for leg in ['front_right', 'back_left', 'front_left', 'back_right']:
+            v = getattr(self.leg_planar_velocities, leg).magnitude
+            theta = getattr(self.leg_planar_velocities, leg).direction
+
             leg_gait_params = LegGaitParams()
 
             step_length, step_frequency = self.compute_step_params(v)
             leg_gait_params.step_length = step_length
-            leg_gait_params.step_frequency = step_frequency
             leg_gait_params.step_direction = theta
             leg_gait_params.step_height = self.step_height
 
+            leg_gait_params.step_frequency = step_frequency
             if self.gait_type == 'walk':
                 # FR=0, BL=0.25, FL=0.5, BR=0.75
-                leg_gait_params.phase_offset = 0.25 * i
+                leg_gait_params.phase_offset = 0.25 * ['front_right', 'back_left', 'front_left', 'back_right'].index(leg)
             elif self.gait_type == 'trot':
                 # FR and BL in phase, FL and BR in phase
-                leg_gait_params.phase_offset = 0.5 * (i % 2)
-
+                leg_gait_params.phase_offset = 0.5 * (['front_right', 'back_left', 'front_left', 'back_right'].index(leg) % 2)
+            leg_gait_params.duty_factor = self.duty_factor
+            
             # TODO: Make an IMU node calculate this based on teleop commands and robot stability,
             # and subscribe to it here instead of hardcoding it.
             leg_gait_params.hip_height = 15.0
 
-            match i:
-                case 0:
-                    msg.front_right = leg_gait_params
-                case 1:
-                    msg.back_left = leg_gait_params
-                case 2:
-                    msg.front_left = leg_gait_params
-                case 3:
-                    msg.back_right = leg_gait_params
+            setattr(msg, leg, leg_gait_params)
 
         self.publisher_.publish(msg)
 

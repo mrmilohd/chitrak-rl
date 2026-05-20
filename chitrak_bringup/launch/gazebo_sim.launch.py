@@ -29,9 +29,16 @@ def generate_launch_description():
         name='gait_scheduler',
         parameters=[config_path],
     )
+    # Launch the bezier gait generator node
+    bezier_gait_generator_node = Node(
+        package='chitrak_leg_controller',
+        executable='bezier_gait_generator',
+        name='bezier_gait_generator',
+    )
 
     return LaunchDescription([
         keyboard_teleop_node,
         body_motion_planner_node,
         gait_scheduler_node,
+        bezier_gait_generator_node,
     ])

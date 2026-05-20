@@ -24,6 +24,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'bezier_gait_generator = chitrak_leg_controller.bezier_gait_generator:main',
+            'viz_leg_trajectories = chitrak_leg_controller.viz_leg_trajectories:main',
         ],
     },
 )
