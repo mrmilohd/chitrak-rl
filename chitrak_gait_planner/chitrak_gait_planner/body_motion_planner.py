@@ -50,10 +50,10 @@ class BodyMotionPlanner(Node):
         v_fl = math.hypot(vl, vf)
         v_br = math.hypot(vr, vb)
 
-        theta_fr = math.degrees(math.atan2(vf, vr)) if v_fr > 0 else 0.0
-        theta_bl = math.degrees(math.atan2(vb, vl)) if v_bl > 0 else 0.0
-        theta_fl = math.degrees(math.atan2(vf, vl)) if v_fl > 0 else 0.0
-        theta_br = math.degrees(math.atan2(vb, vr)) if v_br > 0 else 0.0
+        theta_fr = math.atan2(vf, vr) if v_fr > 0 else 0.0
+        theta_bl = math.atan2(vb, vl) if v_bl > 0 else 0.0
+        theta_fl = math.atan2(vf, vl) if v_fl > 0 else 0.0
+        theta_br = math.atan2(vb, vr) if v_br > 0 else 0.0
 
         fr_planar_vel = LegPlanarVelocity(magnitude=v_fr, direction=theta_fr)
         bl_planar_vel = LegPlanarVelocity(magnitude=v_bl, direction=theta_bl)

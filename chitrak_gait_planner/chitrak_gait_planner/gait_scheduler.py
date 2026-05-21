@@ -10,10 +10,10 @@ class GaitScheduler(Node):
         super().__init__('gait_scheduler')
 
         # Gait parameters
-        self.declare_parameter('gait.step_height', 5.0)  # TODO: If required, make this dynamic
+        self.declare_parameter('gait.step_height', 0.05)  # TODO: If required, make this dynamic
         self.declare_parameter('gait.min_step_frequency', 0.25)
         self.declare_parameter('gait.max_step_frequency', 1.0)
-        self.declare_parameter('gait.max_step_length', 5.0)
+        self.declare_parameter('gait.max_step_length', 0.05)
         self.declare_parameter('gait.duty_factor', 0.8)  # TODO: If required, make this dynamic
         self.declare_parameter('gait.type', 'walk')
 
@@ -37,7 +37,7 @@ class GaitScheduler(Node):
         self.leg_planar_velocities = msg
 
     def compute_step_params(self, speed):
-        if speed < 0.1:
+        if speed < 0.01:
             return 0.0, self.min_step_frequency
 
         # try max frequency first
@@ -78,7 +78,7 @@ class GaitScheduler(Node):
             
             # TODO: Make an IMU node calculate this based on teleop commands and robot stability,
             # and subscribe to it here instead of hardcoding it.
-            leg_gait_params.hip_height = 15.0
+            leg_gait_params.hip_height = 0.15
 
             setattr(msg, leg, leg_gait_params)
 

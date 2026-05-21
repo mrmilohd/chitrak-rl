@@ -20,7 +20,7 @@ class BezierGaitGenerator(Node):
             step_frequency=1.0,
             phase_offset=0.0,
             duty_factor=0.8,
-            hip_height=15.0
+            hip_height=0.15
         )
         for leg in ['front_right', 'back_left', 'front_left', 'back_right']:
              setattr(self.gait_params, leg, default_leg_gait_params)
@@ -41,7 +41,7 @@ class BezierGaitGenerator(Node):
 
             d = leg_gait_params.step_length
             h = leg_gait_params.step_height
-            theta = math.radians(leg_gait_params.step_direction)
+            theta = leg_gait_params.step_direction
             hip_height = leg_gait_params.hip_height
 
             dx = d * 0.7 * np.cos(theta)

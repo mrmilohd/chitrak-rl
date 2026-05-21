@@ -69,7 +69,7 @@ class VizLegTrajectories(Node):
         for leg in ['front_right', 'back_left', 'front_left', 'back_right']:
             point = getattr(msg, leg)
 
-            self.point_history[leg].append(Point(x=point.x/100, y=point.y/100, z=point.z/100))
+            self.point_history[leg].append(Point(x=point.x, y=point.y, z=point.z))
 
         for leg in ['front_right', 'back_left', 'front_left', 'back_right']:
             marker = self.create_marker(leg)
