@@ -4,6 +4,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import Twist
 import math
 
+
 class KeyboardTeleop(Node):
     def __init__(self):
         super().__init__('keyboard_teleop')
@@ -15,19 +16,19 @@ class KeyboardTeleop(Node):
         self.wz = 0.0
 
         # Step sizes
-        self.linear_vel_step = 0.01 # m/s (= 1 cm/s)
-        self.angular_vel_step = math.radians(5) # rad/s ( = 5 deg/s)
+        self.linear_vel_step = 0.01  # m/s (= 1 cm/s)
+        self.angular_vel_step = math.radians(5)  # rad/s ( = 5 deg/s)
 
         # Start keyboard listener
         self.listener = keyboard.Listener(on_press=self.on_press)
         self.listener.start()
 
-        self.timer = self.create_timer(0.1, self.publish_velocity) # 10 Hz
+        self.timer = self.create_timer(0.1, self.publish_velocity)  # 10 Hz
 
         self.get_logger().info("Keyboard teleop node started.")
         self.get_logger().info("Use WASD for linear, QE for rotation, X to stop")
         self.get_logger().info(f"vx: {self.vx:.2f}, vy: {self.vy:.2f}, wz: {self.wz:.2f}")
-    
+
     def on_press(self, key):
         try:
             self.update_velocity(key.char)
@@ -68,6 +69,7 @@ class KeyboardTeleop(Node):
 
             self.get_logger().info(f"vx: {self.vx:.2f}, vy: {self.vy:.2f}, wz: {self.wz:.2f}")
 
+
 def main(args=None):
     rclpy.init(args=args)
     keyboard_teleop = KeyboardTeleop()
@@ -79,5 +81,6 @@ def main(args=None):
         keyboard_teleop.destroy_node()
         rclpy.shutdown()
 
+
 if __name__ == '__main__':
-    main()    
+    main()

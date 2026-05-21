@@ -5,10 +5,11 @@ from chitrak_msgs.msg import ChitrakLegPlanarVelocities
 from chitrak_msgs.msg import LegPlanarVelocity
 import math
 
+
 class BodyMotionPlanner(Node):
     def __init__(self):
         super().__init__('body_motion_planner')
-        
+
         # Geometry parameters
         self.declare_parameter('geometry.length', 30.0)
         self.declare_parameter('geometry.width', 20.0)
@@ -21,10 +22,19 @@ class BodyMotionPlanner(Node):
         self.last_cmd_vel.linear.x = 0.0
         self.last_cmd_vel.linear.y = 0.0
         self.last_cmd_vel.angular.z = 0.0
-        self.subscription_ = self.create_subscription(Twist, '/chitrak/cmd_vel', self.cmd_vel_callback, 10)
+        self.subscription_ = self.create_subscription(
+            Twist,
+            '/chitrak/cmd_vel',
+            self.cmd_vel_callback,
+            10
+        )
 
-        self.publisher_ = self.create_publisher(ChitrakLegPlanarVelocities, '/chitrak/leg_planar_velocities', 10)
-        self.timer = self.create_timer(0.1, self.publish_leg_velocities) # 10 Hz
+        self.publisher_ = self.create_publisher(
+            ChitrakLegPlanarVelocities,
+            '/chitrak/leg_planar_velocities',
+            10
+        )
+        self.timer = self.create_timer(0.1, self.publish_leg_velocities)  # 10 Hz
 
     def cmd_vel_callback(self, msg):
         self.last_cmd_vel = msg
@@ -68,15 +78,17 @@ class BodyMotionPlanner(Node):
 
         self.publisher_.publish(msg)
 
+
 def main(args=None):
     rclpy.init(args=args)
     body_motion_planner = BodyMotionPlanner()
-    
+
     try:
         rclpy.spin(body_motion_planner)
     finally:
         body_motion_planner.destroy_node()
         rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()

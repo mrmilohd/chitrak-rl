@@ -7,7 +7,9 @@ import os
 def generate_launch_description():
     # Path to config file
     description_pkg_share = FindPackageShare('chitrak_description')
-    config_path = os.path.join(description_pkg_share.find('chitrak_description'), 'config', 'chitrak_params.yaml')
+    config_path = os.path.join(
+        description_pkg_share.find('chitrak_description'), 'config', 'chitrak_params.yaml'
+    )
 
     # Launch the keyboard teleop node
     keyboard_teleop_node = Node(

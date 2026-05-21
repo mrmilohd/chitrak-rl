@@ -7,7 +7,9 @@ import os
 def generate_launch_description():
     # Path to URDF file
     description_pkg_share = FindPackageShare("chitrak_description")
-    urdf_path = os.path.join(description_pkg_share.find("chitrak_description"), "urdf", "chitrak.urdf")
+    urdf_path = os.path.join(
+        description_pkg_share.find("chitrak_description"), "urdf", "chitrak.urdf"
+    )
 
     # Path to RViz config
     bringup_pkg_path = FindPackageShare("chitrak_bringup").find("chitrak_bringup")

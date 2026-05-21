@@ -6,11 +6,17 @@ from visualization_msgs.msg import MarkerArray
 from geometry_msgs.msg import Point
 from collections import deque
 
+
 class VizLegTrajectories(Node):
     def __init__(self):
         super().__init__('viz_leg_trajectories')
 
-        self.subscription_ = self.create_subscription(LegEndPositions, '/chitrak/leg_end_positions', self.leg_end_positions_callback, 10)
+        self.subscription_ = self.create_subscription(
+            LegEndPositions,
+            '/chitrak/leg_end_positions',
+            self.leg_end_positions_callback,
+            10
+        )
         self.publisher_ = self.create_publisher(MarkerArray, '/chitrak/leg_trajectory_markers', 10)
 
         self.marker_ids = {
@@ -43,7 +49,7 @@ class VizLegTrajectories(Node):
 
     def create_marker(self, leg_name):
         marker = Marker()
-        
+
         marker.header.frame_id = self.frame_map[leg_name]
         marker.header.stamp.sec = 0
         marker.header.stamp.nanosec = 0
@@ -62,7 +68,7 @@ class VizLegTrajectories(Node):
         marker.color.a = a
 
         return marker
-    
+
     def leg_end_positions_callback(self, msg):
         marker_array = MarkerArray()
 
@@ -77,6 +83,7 @@ class VizLegTrajectories(Node):
 
         self.publisher_.publish(marker_array)
 
+
 def main(args=None):
     rclpy.init(args=args)
     viz_leg_trajectories = VizLegTrajectories()
@@ -86,6 +93,7 @@ def main(args=None):
     finally:
         viz_leg_trajectories.destroy_node()
         rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()

@@ -5,6 +5,7 @@ from chitrak_msgs.msg import LegPlanarVelocity
 from chitrak_msgs.msg import ChitrakGaitParams
 from chitrak_msgs.msg import LegGaitParams
 
+
 class GaitScheduler(Node):
     def __init__(self):
         super().__init__('gait_scheduler')
@@ -24,14 +25,28 @@ class GaitScheduler(Node):
         self.duty_factor = self.get_parameter('gait.duty_factor').value
         self.gait_type = self.get_parameter('gait.type').value
 
+        self.leg_index = {
+            'front_right': 0,
+            'back_left': 1,
+            'front_left': 2,
+            'back_right': 3
+        }
+
         self.leg_planar_velocities = ChitrakLegPlanarVelocities()
         # Set default leg average velocities to avoid errors before the first cmd_vel is received
         for leg in ['front_right', 'back_left', 'front_left', 'back_right']:
-             setattr(self.leg_planar_velocities, leg, LegPlanarVelocity(magnitude=0.0, direction=0.0))
-        self.subscription_ = self.create_subscription(ChitrakLegPlanarVelocities, '/chitrak/leg_planar_velocities', self.leg_planar_velocities_callback, 10)
+            setattr(
+                self.leg_planar_velocities, leg, LegPlanarVelocity(magnitude=0.0, direction=0.0)
+            )
+        self.subscription_ = self.create_subscription(
+            ChitrakLegPlanarVelocities,
+            '/chitrak/leg_planar_velocities',
+            self.leg_planar_velocities_callback,
+            10
+        )
 
         self.publisher_ = self.create_publisher(ChitrakGaitParams, '/chitrak/gait_params', 10)
-        self.timer = self.create_timer(0.1, self.publish_gait_params) # 10 Hz      
+        self.timer = self.create_timer(0.1, self.publish_gait_params)  # 10 Hz
 
     def leg_planar_velocities_callback(self, msg):
         self.leg_planar_velocities = msg
@@ -70,12 +85,12 @@ class GaitScheduler(Node):
             leg_gait_params.step_frequency = step_frequency
             if self.gait_type == 'walk':
                 # FR=0, BL=0.25, FL=0.5, BR=0.75
-                leg_gait_params.phase_offset = 0.25 * ['front_right', 'back_left', 'front_left', 'back_right'].index(leg)
+                leg_gait_params.phase_offset = 0.25 * self.leg_index[leg]
             elif self.gait_type == 'trot':
                 # FR and BL in phase, FL and BR in phase
-                leg_gait_params.phase_offset = 0.5 * (['front_right', 'back_left', 'front_left', 'back_right'].index(leg) % 2)
+                leg_gait_params.phase_offset = 0.5 * (self.leg_index[leg] % 2)
             leg_gait_params.duty_factor = self.duty_factor
-            
+
             # TODO: Make an IMU node calculate this based on teleop commands and robot stability,
             # and subscribe to it here instead of hardcoding it.
             leg_gait_params.hip_height = 0.15
@@ -84,15 +99,17 @@ class GaitScheduler(Node):
 
         self.publisher_.publish(msg)
 
+
 def main(args=None):
     rclpy.init(args=args)
     gait_scheduler = GaitScheduler()
-    
+
     try:
         rclpy.spin(gait_scheduler)
     finally:
         gait_scheduler.destroy_node()
         rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()

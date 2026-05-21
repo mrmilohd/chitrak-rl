@@ -7,6 +7,7 @@ from geometry_msgs.msg import Point
 import math
 import numpy as np
 
+
 class BezierGaitGenerator(Node):
     def __init__(self):
         super().__init__('bezier_gait_generator')
@@ -23,18 +24,23 @@ class BezierGaitGenerator(Node):
             hip_height=0.15
         )
         for leg in ['front_right', 'back_left', 'front_left', 'back_right']:
-             setattr(self.gait_params, leg, default_leg_gait_params)
-        self.subscription_ = self.create_subscription(ChitrakGaitParams, '/chitrak/gait_params', self.gait_params_callback, 10)
+            setattr(self.gait_params, leg, default_leg_gait_params)
+        self.subscription_ = self.create_subscription(
+            ChitrakGaitParams,
+            '/chitrak/gait_params',
+            self.gait_params_callback,
+            10
+        )
         self.bezier_weights = {}
         self.compute_bezier_weights()
 
         self.publisher_ = self.create_publisher(LegEndPositions, '/chitrak/leg_end_positions', 10)
-        self.timer = self.create_timer(0.01, self.publish_leg_end_positions) # 100 Hz
+        self.timer = self.create_timer(0.01, self.publish_leg_end_positions)  # 100 Hz
 
     def gait_params_callback(self, msg):
         self.gait_params = msg
         self.compute_bezier_weights()
-    
+
     def compute_bezier_weights(self):
         for leg in ['front_right', 'back_left', 'front_left', 'back_right']:
             leg_gait_params = getattr(self.gait_params, leg)
@@ -66,13 +72,13 @@ class BezierGaitGenerator(Node):
             ])
 
             M = np.array([
-                [  1,   0,   0,    0,    0,   0,  0],
-                [ -6,   6,   0,    0,    0,   0,  0],
-                [ 15, -30,  15,    0,    0,   0,  0],
-                [-20,  60, -60,   20,    0,   0,  0],
-                [ 15, -60,  90,  -60,   15,   0,  0],
-                [ -6,  30, -60,   60,  -30,   6,  0],
-                [  1,  -6,  15,  -20,   15,  -6,  1]
+                [  1,   0,   0,    0,    0,   0,  0],  # noqa: E201, E203
+                [ -6,   6,   0,    0,    0,   0,  0],  # noqa: E201, E203
+                [ 15, -30,  15,    0,    0,   0,  0],  # noqa: E201, E203
+                [-20,  60, -60,   20,    0,   0,  0],  # noqa: E201, E203
+                [ 15, -60,  90,  -60,   15,   0,  0],  # noqa: E201, E203
+                [ -6,  30, -60,   60,  -30,   6,  0],  # noqa: E201, E203
+                [  1,  -6,  15,  -20,   15,  -6,  1]   # noqa: E201, E203
             ])
 
             W = np.linalg.inv(M) @ np.linalg.inv(T.T @ T) @ T.T @ P
@@ -81,7 +87,7 @@ class BezierGaitGenerator(Node):
     def t_to_u(self, t, leg):
         leg_gait_params = getattr(self.gait_params, leg)
         Tp = 1 / leg_gait_params.step_frequency
-        
+
         beta_u = 0.6  # Due to the choice of U
         beta_t = leg_gait_params.duty_factor
 
@@ -92,12 +98,12 @@ class BezierGaitGenerator(Node):
             u = (beta_u / (2 * beta_t)) * (2 * norm_t - 1) + 0.5
         else:
             u = (beta_u / 2) - (beta_u - 1) * (1 + beta_t - 2*norm_t) / (2*(beta_t - 1)) + 0.5
-        
+
         return u
 
     def compute_bezier_point(self, u, leg):
         W = self.bezier_weights[leg]
-        
+
         n = 6
         B = np.zeros(3)
         for i in range(n + 1):
@@ -111,25 +117,29 @@ class BezierGaitGenerator(Node):
 
         for leg in ['front_right', 'back_left', 'front_left', 'back_right']:
             Tp = 1 / getattr(self.gait_params, leg).step_frequency
-            t = (self.get_clock().now().nanoseconds / 1e9) + getattr(self.gait_params, leg).phase_offset * Tp
+            current_time = self.get_clock().now().nanoseconds / 1e9
+            phase_offset = getattr(self.gait_params, leg).phase_offset
+            t = current_time + phase_offset * Tp
             t %= Tp
 
             u = self.t_to_u(t, leg)
 
             end_position = self.compute_bezier_point(u, leg)
             setattr(msg, leg, Point(x=end_position[0], y=end_position[1], z=end_position[2]))
-        
+
         self.publisher_.publish(msg)
+
 
 def main(args=None):
     rclpy.init(args=args)
     bezier_gait_generator = BezierGaitGenerator()
-    
+
     try:
         rclpy.spin(bezier_gait_generator)
     finally:
         bezier_gait_generator.destroy_node()
         rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()
