@@ -26,18 +26,18 @@ class VizLegTrajectories(Node):
             'back_right': 3,
         }
 
-        self.frame_map = {
-            'front_right': 'fr_thigh_link',
-            'back_left': 'bl_thigh_link',
-            'front_left': 'fl_thigh_link',
-            'back_right': 'br_thigh_link',
+        self.offset_map = {
+            'front_right': (0.125, -0.076, -0.018),
+            'back_left': (-0.145, 0.076, -0.018),
+            'front_left': (0.125, 0.076, -0.018),
+            'back_right': (-0.145, -0.076, -0.018),
         }
 
         self.colors = {
-            'front_right': (0.8, 0.8, 0.8, 0.8),
-            'back_left':   (0.8, 0.8, 0.8, 0.8),
-            'front_left':  (0.8, 0.8, 0.8, 0.8),
-            'back_right':  (0.8, 0.8, 0.8, 0.8),
+            'front_right': (1.0, 0.5, 0.0, 0.8),
+            'back_left':   (1.0, 0.5, 0.0, 0.8),
+            'front_left':  (0.2, 0.5, 1.0, 0.8),
+            'back_right':  (0.2, 0.5, 1.0, 0.8),
         }
 
         self.point_history = {
@@ -50,7 +50,7 @@ class VizLegTrajectories(Node):
     def create_marker(self, leg_name):
         marker = Marker()
 
-        marker.header.frame_id = self.frame_map[leg_name]
+        marker.header.frame_id = 'base_link'
         marker.header.stamp.sec = 0
         marker.header.stamp.nanosec = 0
         marker.ns = 'leg_trajectories'
@@ -74,8 +74,13 @@ class VizLegTrajectories(Node):
 
         for leg in ['front_right', 'back_left', 'front_left', 'back_right']:
             point = getattr(msg, leg)
-
-            self.point_history[leg].append(Point(x=point.x, y=point.y, z=point.z))
+            self.point_history[leg].append(
+                Point(
+                    x=point.x + self.offset_map[leg][0],
+                    y=point.y + self.offset_map[leg][1],
+                    z=point.z + self.offset_map[leg][2],
+                )
+            )
 
         for leg in ['front_right', 'back_left', 'front_left', 'back_right']:
             marker = self.create_marker(leg)
