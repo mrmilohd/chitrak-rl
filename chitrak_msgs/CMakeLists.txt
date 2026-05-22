@@ -14,9 +14,11 @@ find_package(geometry_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
 "msg/ChitrakGaitParams.msg"
+"msg/ChitrakJointAngles.msg"
 "msg/ChitrakLegPlanarVelocities.msg"
 "msg/LegEndPositions.msg"
 "msg/LegGaitParams.msg"
+"msg/LegJointAngles.msg"
 "msg/LegPlanarVelocity.msg"
 DEPENDENCIES geometry_msgs
 )

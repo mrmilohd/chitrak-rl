@@ -37,10 +37,17 @@ def generate_launch_description():
         executable='bezier_gait_generator',
         name='bezier_gait_generator',
     )
+    # Launch the IK solver node
+    ik_solver_node = Node(
+        package='chitrak_leg_controller',
+        executable='ik_solver',
+        name='ik_solver',
+    )
 
     return LaunchDescription([
         keyboard_teleop_node,
         body_motion_planner_node,
         gait_scheduler_node,
         bezier_gait_generator_node,
+        ik_solver_node,
     ])
