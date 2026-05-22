@@ -11,17 +11,17 @@ class BodyMotionPlanner(Node):
         super().__init__('body_motion_planner')
 
         # Geometry parameters
-        self.declare_parameter('geometry.length', 30.0)
-        self.declare_parameter('geometry.width', 20.0)
+        self.declare_parameter('geometry.length', 0.30)
+        self.declare_parameter('geometry.width', 0.20)
 
         self.L = self.get_parameter('geometry.length').value
         self.W = self.get_parameter('geometry.width').value
 
-        self.last_cmd_vel = Twist()
+        self.cmd_vel = Twist()
         # Set default cmd_vel to avoid errors before the first cmd_vel is received
-        self.last_cmd_vel.linear.x = 0.0
-        self.last_cmd_vel.linear.y = 0.0
-        self.last_cmd_vel.angular.z = 0.0
+        self.cmd_vel.linear.x = 0.0
+        self.cmd_vel.linear.y = 0.0
+        self.cmd_vel.angular.z = 0.0
         self.subscription_ = self.create_subscription(
             Twist,
             '/chitrak/cmd_vel',
@@ -37,16 +37,16 @@ class BodyMotionPlanner(Node):
         self.timer = self.create_timer(0.1, self.publish_leg_velocities)  # 10 Hz
 
     def cmd_vel_callback(self, msg):
-        self.last_cmd_vel = msg
+        self.cmd_vel = msg
 
     def publish_leg_velocities(self):
-        vx = self.last_cmd_vel.linear.x
-        vy = self.last_cmd_vel.linear.y
-        omega = self.last_cmd_vel.angular.z
+        vx = self.cmd_vel.linear.x
+        vy = self.cmd_vel.linear.y
+        omega = self.cmd_vel.angular.z
 
-        vx = self.last_cmd_vel.linear.x
-        vy = self.last_cmd_vel.linear.y
-        omega = self.last_cmd_vel.angular.z
+        vx = self.cmd_vel.linear.x
+        vy = self.cmd_vel.linear.y
+        omega = self.cmd_vel.angular.z
 
         # Inverse differential kinematics
         vr = vx + (self.W / 2.0) * omega
