@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro"  name="chitrak">
+    <xacro:include filename="$(find chitrak_description)/urdf/chitrak.xacro"/>
+</robot>
