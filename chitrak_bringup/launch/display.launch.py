@@ -2,22 +2,21 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 import os
+import xacro
 
 
 def generate_launch_description():
-    # Path to URDF file
+    # Path to xacro file
     description_pkg_share = FindPackageShare("chitrak_description")
-    urdf_path = os.path.join(
-        description_pkg_share.find("chitrak_description"), "urdf", "chitrak.urdf"
+    xacro_path = os.path.join(
+        description_pkg_share.find("chitrak_description"), "urdf", "chitrak.xacro"
     )
 
     # Path to RViz config
     bringup_pkg_path = FindPackageShare("chitrak_bringup").find("chitrak_bringup")
     rviz_config_path = os.path.join(bringup_pkg_path, "config", "display.rviz")
 
-    with open(urdf_path, 'r') as f:
-        robot_description_content = f.read()
-
+    robot_description_content = xacro.process_file(xacro_path).toxml()
     robot_description = {"robot_description": robot_description_content}
 
     # Robot State Publisher

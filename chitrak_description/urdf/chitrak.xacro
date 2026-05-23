@@ -100,8 +100,8 @@
     <limit
       lower="-1.57"
       upper="1.57"
-      effort="0"
-      velocity="0" />
+      effort="2.5"
+      velocity="8.0" />
   </joint>
   <link
     name="fr_thigh_link">
@@ -158,8 +158,8 @@
     <limit
       lower="0"
       upper="3.14"
-      effort="0"
-      velocity="0" />
+      effort="2.5"
+      velocity="8.0" />
   </joint>
   <link
     name="fr_calf_link">
@@ -216,8 +216,8 @@
     <limit
       lower="-3.14"
       upper="0"
-      effort="0"
-      velocity="0" />
+      effort="2.5"
+      velocity="8.0" />
   </joint>
   <link
     name="fl_hip_link">
@@ -274,8 +274,8 @@
     <limit
       lower="-1.57"
       upper="1.57"
-      effort="0"
-      velocity="0" />
+      effort="2.5"
+      velocity="8.0" />
   </joint>
   <link
     name="fl_thigh_link">
@@ -332,8 +332,8 @@
     <limit
       lower="-3.14"
       upper="0"
-      effort="0"
-      velocity="0" />
+      effort="2.5"
+      velocity="8.0" />
   </joint>
   <link
     name="fl_calf_link">
@@ -390,8 +390,8 @@
     <limit
       lower="0"
       upper="3.14"
-      effort="0"
-      velocity="0" />
+      effort="2.5"
+      velocity="8.0" />
   </joint>
   <link
     name="br_hip_link">
@@ -448,8 +448,8 @@
     <limit
       lower="-1.57"
       upper="1.57"
-      effort="0"
-      velocity="0" />
+      effort="2.5"
+      velocity="8.0" />
   </joint>
   <link
     name="br_thigh_link">
@@ -506,8 +506,8 @@
     <limit
       lower="0"
       upper="3.14"
-      effort="0"
-      velocity="0" />
+      effort="2.5"
+      velocity="8.0" />
   </joint>
   <link
     name="br_calf_link">
@@ -564,8 +564,8 @@
     <limit
       lower="-3.14"
       upper="0"
-      effort="0"
-      velocity="0" />
+      effort="2.5"
+      velocity="8.0" />
   </joint>
   <link
     name="bl_hip_link">
@@ -622,8 +622,8 @@
     <limit
       lower="-1.57"
       upper="1.57"
-      effort="0"
-      velocity="0" />
+      effort="2.5"
+      velocity="8.0" />
   </joint>
   <link
     name="bl_thigh_link">
@@ -680,8 +680,8 @@
     <limit
       lower="-3.14"
       upper="0"
-      effort="0"
-      velocity="0" />
+      effort="2.5"
+      velocity="8.0" />
   </joint>
   <link
     name="bl_calf_link">
@@ -738,7 +738,7 @@
     <limit
       lower="0"
       upper="3.14"
-      effort="0"
-      velocity="0" />
+      effort="2.5"
+      velocity="8.0" />
   </joint>
 </robot>
