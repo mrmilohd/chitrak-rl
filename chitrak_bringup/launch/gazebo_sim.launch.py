@@ -20,7 +20,8 @@ def generate_launch_description():
         sim_pkg_share.find('chitrak_sim'), 'urdf', 'chitrak_gazebo.xacro'
     )
     world_path = os.path.join(
-        sim_pkg_share.find('chitrak_sim'), 'worlds', 'empty_world.sdf'
+        # sim_pkg_share.find('chitrak_sim'), 'worlds', 'empty_world.sdf'
+        sim_pkg_share.find('chitrak_sim'), 'worlds', 'test_bench.sdf'
     )
 
     # Path to ros_gz_sim launch file
@@ -88,7 +89,7 @@ def generate_launch_description():
         arguments=[
             '-name', 'chitrak',
             '-topic', '/robot_description',
-            '-x', '0', '-y', '0', '-z', '0.15',
+            '-x', '0', '-y', '0', '-z', '0.3',
         ],
     )
 
