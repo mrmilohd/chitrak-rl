@@ -14,7 +14,7 @@ def generate_launch_description():
         description_pkg_share.find('chitrak_description'), 'config', 'chitrak_params.yaml'
     )
 
-    # Path to gazebo xacro and world files
+    # Path to gazebo xacro, world and ros_gz_bridge files
     sim_pkg_share = FindPackageShare('chitrak_sim')
     xacro_path = os.path.join(
         sim_pkg_share.find('chitrak_sim'), 'urdf', 'chitrak_gazebo.xacro'
@@ -23,6 +23,9 @@ def generate_launch_description():
         # sim_pkg_share.find('chitrak_sim'), 'worlds', 'empty_world.sdf'
         sim_pkg_share.find('chitrak_sim'), 'worlds', 'test_bench.sdf'
     )
+    ros_gz_bridge_path = os.path.join(
+        sim_pkg_share.find('chitrak_sim'), 'config', 'ros_gz_bridge.yaml'
+    )
 
     # Path to ros_gz_sim launch file
     ros_gz_sim_pkg_path = FindPackageShare('ros_gz_sim')
@@ -30,8 +33,43 @@ def generate_launch_description():
         ros_gz_sim_pkg_path.find('ros_gz_sim'), 'launch', 'gz_sim.launch.py'
     )
 
+    # Robot State Publisher
     robot_description_content = xacro.process_file(xacro_path).toxml()
     robot_description = {"robot_description": robot_description_content}
+    rsp_node = Node(
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        name="robot_state_publisher",
+        parameters=[robot_description],
+    )
+    # Launch Gazebo with the specified world
+    launch_gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            gz_sim_launch_path
+        ),
+        launch_arguments={
+            'gz_args': world_path,
+            'on_exit_shutdown': 'true',
+        }.items(),
+    )
+    # Spawn chitrak in Gazebo
+    spawn_entity_node = Node(
+        package='ros_gz_sim',
+        executable='create',
+        name='spawn_entity',
+        arguments=[
+            '-name', 'chitrak',
+            '-topic', '/robot_description',
+            '-x', '0', '-y', '0', '-z', '0.3',
+        ],
+    )
+    # Run ros-gz bridge with the specified config
+    ros_gz_bridge_node = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='ros_gz_bridge',
+        parameters=[{'config_file': ros_gz_bridge_path}],
+    )
 
     # Launch the keyboard teleop node
     keyboard_teleop_node = Node(
@@ -65,41 +103,16 @@ def generate_launch_description():
         executable='ik_solver',
         name='ik_solver',
     )
-    # Robot State Publisher
-    rsp_node = Node(
-        package="robot_state_publisher",
-        executable="robot_state_publisher",
-        output="screen",
-        parameters=[robot_description],
-    )
-    # Launch Gazebo with the specified world
-    launch_gazebo = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            gz_sim_launch_path
-        ),
-        launch_arguments={
-            'gz_args': world_path,
-            'on_exit_shutdown': 'true',
-        }.items(),
-    )
-    # Spawn chitrak in Gazebo
-    spawn_entity = Node(
-        package='ros_gz_sim',
-        executable='create',
-        arguments=[
-            '-name', 'chitrak',
-            '-topic', '/robot_description',
-            '-x', '0', '-y', '0', '-z', '0.3',
-        ],
-    )
 
     return LaunchDescription([
+        rsp_node,
+        launch_gazebo,
+        spawn_entity_node,
+        ros_gz_bridge_node,
+
         keyboard_teleop_node,
         body_motion_planner_node,
         gait_scheduler_node,
         bezier_gait_generator_node,
         ik_solver_node,
-        rsp_node,
-        launch_gazebo,
-        spawn_entity,
     ])
