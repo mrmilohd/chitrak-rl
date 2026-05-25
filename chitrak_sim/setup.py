@@ -30,6 +30,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'joint_angles_translator = chitrak_sim.joint_angles_translator:main',
         ],
     },
 )

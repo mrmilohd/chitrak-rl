@@ -103,6 +103,12 @@ def generate_launch_description():
         executable='ik_solver',
         name='ik_solver',
     )
+    # Launch the joint angles translator node
+    joint_angles_translator_node = Node(
+        package='chitrak_sim',
+        executable='joint_angles_translator',
+        name='joint_angles_translator',
+    )
 
     return LaunchDescription([
         rsp_node,
@@ -115,4 +121,5 @@ def generate_launch_description():
         gait_scheduler_node,
         bezier_gait_generator_node,
         ik_solver_node,
+        joint_angles_translator_node,
     ])
