@@ -5,8 +5,9 @@
 <!-- Make changes at your own risk -->
 <robot
   name="chitrak_description">
+  <link name="base_link"></link>
   <link
-    name="base_link">
+    name="torso_link">
     <inertial>
       <origin
         xyz="-0.00238868927667727 -1.23101962146306E-05 -0.0259410834694735"
@@ -27,7 +28,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://chitrak_description/meshes/base_link.STL" />
+          filename="package://chitrak_description/meshes/torso_link.STL" />
       </geometry>
       <material
         name="">
@@ -41,10 +42,15 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://chitrak_description/meshes/base_link.STL" />
+          filename="package://chitrak_description/meshes/torso_link.STL" />
       </geometry>
     </collision>
   </link>
+  <joint name="torso_joint" type="fixed">
+    <origin xyz ="0 0 0" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="torso_link"/>
+  </joint>
   <link
     name="fr_hip_link">
     <inertial>
@@ -92,7 +98,7 @@
       xyz="0.1034 -0.0557689357599999 -0.018465"
       rpy="0 0 0" />
     <parent
-      link="base_link" />
+      link="torso_link" />
     <child
       link="fr_hip_link" />
     <axis
@@ -266,7 +272,7 @@
       xyz="0.1034 0.0557689357600009 -0.0184649999999999"
       rpy="0 0 0" />
     <parent
-      link="base_link" />
+      link="torso_link" />
     <child
       link="fl_hip_link" />
     <axis
@@ -440,7 +446,7 @@
       xyz="-0.1034 -0.0557689357600001 -0.0184649999999999"
       rpy="0 0 0" />
     <parent
-      link="base_link" />
+      link="torso_link" />
     <child
       link="br_hip_link" />
     <axis
@@ -614,7 +620,7 @@
       xyz="-0.1034 0.055769 -0.018465"
       rpy="0 0 0" />
     <parent
-      link="base_link" />
+      link="torso_link" />
     <child
       link="bl_hip_link" />
     <axis
