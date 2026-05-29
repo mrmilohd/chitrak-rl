@@ -69,3 +69,9 @@
   ros_type_name: "std_msgs/msg/Float64"
   ign_type_name: "ignition.msgs.Double"
   direction: "BIDIRECTIONAL"
+
+- ros_topic_name: "/joint_states"
+  ign_topic_name: "/chitrak/joint_states"
+  ros_type_name: "sensor_msgs/msg/JointState"
+  ign_type_name: "ignition.msgs.Model"
+  direction: "IGN_TO_ROS"

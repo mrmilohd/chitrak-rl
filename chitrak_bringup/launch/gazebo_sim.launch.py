@@ -111,11 +111,13 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        # Simulation Nodes
         rsp_node,
         launch_gazebo,
         spawn_entity_node,
         ros_gz_bridge_node,
 
+        # Control Nodes
         keyboard_teleop_node,
         body_motion_planner_node,
         gait_scheduler_node,

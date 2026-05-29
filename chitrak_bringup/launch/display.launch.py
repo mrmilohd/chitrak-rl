@@ -26,12 +26,6 @@ def generate_launch_description():
         output="screen",
         parameters=[robot_description],
     )
-    # Joint State Publisher (GUI for sliders)
-    jsp_node = Node(
-        package="joint_state_publisher_gui",
-        executable="joint_state_publisher_gui",
-        name="joint_state_publisher_gui",
-    )
     # RViz
     rviz_node = Node(
         package="rviz2",
@@ -48,7 +42,6 @@ def generate_launch_description():
 
     return LaunchDescription([
         rsp_node,
-        jsp_node,
         rviz_node,
         viz_leg_trajectories_node,
     ])
