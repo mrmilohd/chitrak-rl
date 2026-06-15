@@ -92,4 +92,23 @@
 
     </body>
   </worldbody>
+
+  <actuator>
+    <position name="fr_hip_roll"  joint="fr_hip_roll_joint"  kp="20"/>
+    <position name="fr_hip_pitch" joint="fr_hip_pitch_joint" kp="20"/>
+    <position name="fr_knee"      joint="fr_knee_joint"      kp="20"/>
+
+    <position name="fl_hip_roll"  joint="fl_hip_roll_joint"  kp="20"/>
+    <position name="fl_hip_pitch" joint="fl_hip_pitch_joint" kp="20"/>
+    <position name="fl_knee"      joint="fl_knee_joint"      kp="20"/>
+
+    <position name="br_hip_roll"  joint="br_hip_roll_joint"  kp="20"/>
+    <position name="br_hip_pitch" joint="br_hip_pitch_joint" kp="20"/>
+    <position name="br_knee"      joint="br_knee_joint"      kp="20"/>
+
+    <position name="bl_hip_roll"  joint="bl_hip_roll_joint"  kp="20"/>
+    <position name="bl_hip_pitch" joint="bl_hip_pitch_joint" kp="20"/>
+    <position name="bl_knee"      joint="bl_knee_joint"      kp="20"/>
+  </actuator>
+
 </mujoco>
