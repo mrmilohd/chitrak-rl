@@ -56,9 +56,34 @@ noise unopposed. Fix: this class now ignores mjlab's dt-scaling entirely and
 always uses the raw `value * weight` magnitude, matching WTW's compute_reward()
 exactly -- not just in the squash, but in the episode-sum/step-reward logging
 too, so every number this class produces is now WTW-scale, not mjlab-scale.
+
+SECOND ISSUE FOUND, AFTER THE DT FIX, VIA A SECOND REAL KAGGLE RUN: fixing the
+dt-scaling alone did NOT fix training -- Mean value loss was still exactly
+0.0000 and Mean action std still exploding (1.0 -> 3.72). With dt-scaling
+correctly removed, the real (now properly WTW-scaled) per-step rew_buf_neg
+turned out to be approximately -13 (dominated by wtw_action_smoothness_1/_2,
+which together were ~85% of the entire negative bucket -- consistent with an
+exploded, near-random action distribution producing huge action-to-action
+differences). exp(-13 / 0.02) = exp(-665) -- still numerically zero, every
+step, regardless of dt. sigma_rew_neg=0.02 was tuned by WTW's authors against
+THEIR pipeline's typical magnitudes (their own actuator-net torque model,
+their own action scale), which this mjlab port's analytical-PD actuator model
+and GO1_ACTION_SCALE evidently don't reproduce -- same configured weight,
+different raw magnitude, because the rest of the simulation pipeline differs.
+
+`apply_squash` below makes this togglable via the MJLAB_DISABLE_SQUASH env
+var, specifically to A/B test whether sigma_rew_neg=0.02 itself is the active
+bottleneck, independent of anything else: with it set, compute() returns the
+plain (dt-scaling-fixed, WTW-magnitude) sum instead of the ji22 squash. If
+training is learnable with the squash off, the fix is recalibrating
+sigma_rew_neg for this pipeline's actual magnitudes, not WTW's literal 0.02.
+If it's still broken with the squash off too, the action-distribution
+explosion itself is the deeper problem, independent of reward shaping.
 """
 
 from __future__ import annotations
+
+import os
 
 import torch
 
@@ -73,6 +98,7 @@ class Ji22RewardManager(RewardManager):
     *,
     scale_by_dt: bool = True,
     sigma_rew_neg: float = 0.02,
+    apply_squash: bool | None = None,
   ) -> None:
     # scale_by_dt is accepted (ManagerBasedRlEnv constructs this class with
     # that keyword explicitly -- a drop-in RewardManager replacement has to
@@ -81,6 +107,12 @@ class Ji22RewardManager(RewardManager):
     del scale_by_dt
     super().__init__(cfg, env, scale_by_dt=False)
     self.sigma_rew_neg = sigma_rew_neg
+    # MJLAB_DISABLE_SQUASH=1 -> plain sum (squash off), for the A/B test
+    # described in the module docstring. Explicit apply_squash kwarg always
+    # wins over the env var, for direct/programmatic use.
+    if apply_squash is None:
+      apply_squash = os.environ.get("MJLAB_DISABLE_SQUASH", "") != "1"
+    self.apply_squash = apply_squash
     self._reward_buf_pos = torch.zeros_like(self._reward_buf)
     self._reward_buf_neg = torch.zeros_like(self._reward_buf)
 
@@ -111,5 +143,8 @@ class Ji22RewardManager(RewardManager):
       self._episode_sums[name] += value
       self._step_reward[:, term_idx] = value
 
-    self._reward_buf = self._reward_buf_pos * torch.exp(self._reward_buf_neg / self.sigma_rew_neg)
+    if self.apply_squash:
+      self._reward_buf = self._reward_buf_pos * torch.exp(self._reward_buf_neg / self.sigma_rew_neg)
+    else:
+      self._reward_buf = self._reward_buf_pos + self._reward_buf_neg
     return self._reward_buf
