@@ -72,13 +72,25 @@ and GO1_ACTION_SCALE evidently don't reproduce -- same configured weight,
 different raw magnitude, because the rest of the simulation pipeline differs.
 
 `apply_squash` below makes this togglable via the MJLAB_DISABLE_SQUASH env
-var, specifically to A/B test whether sigma_rew_neg=0.02 itself is the active
-bottleneck, independent of anything else: with it set, compute() returns the
-plain (dt-scaling-fixed, WTW-magnitude) sum instead of the ji22 squash. If
-training is learnable with the squash off, the fix is recalibrating
-sigma_rew_neg for this pipeline's actual magnitudes, not WTW's literal 0.02.
-If it's still broken with the squash off too, the action-distribution
-explosion itself is the deeper problem, independent of reward shaping.
+var. IMPORTANT CAVEAT, found by asking the obvious question after building
+this: fully disabling the squash also disables the exact protection it
+exists for -- with it off, per-step reward measured ~-603, and since
+fell_over is a true terminal state (no value bootstrap past it), a policy
+optimizing that objective over enough iterations could learn to reward-hack
+by falling over immediately to minimize how many deeply-negative steps it
+experiences -- precisely the failure mode WTW built the squash to prevent.
+MJLAB_DISABLE_SQUASH=1 is meant for a SHORT diagnostic run only (confirming
+the value function/reward signal is alive at all -- nonzero, moving numbers
+instead of flat 0.0000/0.00), not as an actual training configuration.
+
+MJLAB_SIGMA_REW_NEG env var (default 0.02, WTW's literal published value) is
+the real fix to try instead: keep the squash's protective shape, just
+recalibrate it for this pipeline's actual magnitudes. Measured real per-step
+rew_buf_neg here is ~-13 (dominated by wtw_action_smoothness_1/_2) -- WTW's
+0.02 makes exp(-13/0.02) = exp(-665) (crushed to ~0, no usable signal);
+something in the ~5-15 range would squash moderately instead (e.g.
+exp(-13/10) ~= 0.27) without removing the anti-reward-hacking protection
+entirely.
 """
 
 from __future__ import annotations
@@ -106,10 +118,19 @@ class Ji22RewardManager(RewardManager):
     # scaling regardless of this value. See module docstring.
     del scale_by_dt
     super().__init__(cfg, env, scale_by_dt=False)
+    # MJLAB_SIGMA_REW_NEG overrides the default (WTW's literal 0.02) without
+    # a code change -- the real fix to try, per the module docstring, rather
+    # than MJLAB_DISABLE_SQUASH (diagnostic-only, removes reward-hacking
+    # protection entirely). Explicit sigma_rew_neg kwarg always wins over the
+    # env var, for direct/programmatic use.
+    env_sigma = os.environ.get("MJLAB_SIGMA_REW_NEG")
+    if env_sigma is not None:
+      sigma_rew_neg = float(env_sigma)
     self.sigma_rew_neg = sigma_rew_neg
-    # MJLAB_DISABLE_SQUASH=1 -> plain sum (squash off), for the A/B test
-    # described in the module docstring. Explicit apply_squash kwarg always
-    # wins over the env var, for direct/programmatic use.
+    # MJLAB_DISABLE_SQUASH=1 -> plain sum (squash off), for the SHORT
+    # diagnostic-only A/B test described in the module docstring. Explicit
+    # apply_squash kwarg always wins over the env var, for direct/
+    # programmatic use.
     if apply_squash is None:
       apply_squash = os.environ.get("MJLAB_DISABLE_SQUASH", "") != "1"
     self.apply_squash = apply_squash
