@@ -38,6 +38,24 @@ wtw_tracking_contacts_shaped_vel (env_cfg.py): each of those has a
 quantity internally (matching WTW's own corl_rewards.py), so their net
 per-step contribution is negative -- they must land in the negative bucket,
 not the positive one, despite the positive weight.
+
+BUG FOUND VIA A REAL KAGGLE RUN, FIXED HERE: this class previously inherited
+mjlab's default dt-scaling (`value * weight * dt`, dt ~= 0.02), but WTW's own
+compute_reward() has NO dt multiplication anywhere -- `rew = func() * weight`,
+full stop. sigma_rew_neg=0.02 was calibrated by WTW's authors against THAT
+unscaled magnitude. Multiplying every term by an extra ~0.02 before the squash
+made rew_buf_neg ~50x smaller than WTW ever intended it to be relative to
+sigma_rew_neg, which (counterintuitively) does NOT make the squash gentler --
+exp(rew_buf_neg / sigma_rew_neg) is still wildly negative for very ordinary
+per-step penalty totals, crushing the entire reward signal to ~0 essentially
+every step from the start of training. Confirmed in an actual ~990-iteration
+Kaggle run: Mean reward stuck at 0.00, Mean value loss at exactly 0.0000, and
+action std *growing* (1.0 -> 3.68) instead of shrinking -- a policy that never
+received a usable gradient, with the entropy bonus pushing it toward pure
+noise unopposed. Fix: this class now ignores mjlab's dt-scaling entirely and
+always uses the raw `value * weight` magnitude, matching WTW's compute_reward()
+exactly -- not just in the squash, but in the episode-sum/step-reward logging
+too, so every number this class produces is now WTW-scale, not mjlab-scale.
 """
 
 from __future__ import annotations
@@ -56,15 +74,20 @@ class Ji22RewardManager(RewardManager):
     scale_by_dt: bool = True,
     sigma_rew_neg: float = 0.02,
   ) -> None:
-    super().__init__(cfg, env, scale_by_dt=scale_by_dt)
+    # scale_by_dt is accepted (ManagerBasedRlEnv constructs this class with
+    # that keyword explicitly -- a drop-in RewardManager replacement has to
+    # accept it) but deliberately IGNORED: compute() below never applies dt
+    # scaling regardless of this value. See module docstring.
+    del scale_by_dt
+    super().__init__(cfg, env, scale_by_dt=False)
     self.sigma_rew_neg = sigma_rew_neg
     self._reward_buf_pos = torch.zeros_like(self._reward_buf)
     self._reward_buf_neg = torch.zeros_like(self._reward_buf)
 
   def compute(self, dt: float) -> torch.Tensor:
+    del dt  # Deliberately unused -- WTW's own reward scaling has no dt factor.
     self._reward_buf_pos[:] = 0.0
     self._reward_buf_neg[:] = 0.0
-    scale = dt if self._scale_by_dt else 1.0
 
     for term_idx, (name, term_cfg) in enumerate(
       zip(self._term_names, self._term_cfgs, strict=False)
@@ -75,7 +98,7 @@ class Ji22RewardManager(RewardManager):
 
       value = term_cfg.func(self._env, **term_cfg.params)
       self._check_term_shape(name, value)
-      value = value * term_cfg.weight * scale
+      value = value * term_cfg.weight  # No dt multiplication -- see docstring.
       value = torch.nan_to_num(value, nan=0.0, posinf=0.0, neginf=0.0)
 
       # Classify by the computed value's sign, not the configured weight's
@@ -86,7 +109,7 @@ class Ji22RewardManager(RewardManager):
         self._reward_buf_neg += value
 
       self._episode_sums[name] += value
-      self._step_reward[:, term_idx] = value / scale
+      self._step_reward[:, term_idx] = value
 
     self._reward_buf = self._reward_buf_pos * torch.exp(self._reward_buf_neg / self.sigma_rew_neg)
     return self._reward_buf
