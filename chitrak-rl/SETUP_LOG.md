@@ -293,6 +293,71 @@ If robot is floppy/slow → increase `stiffness`.
 
 ---
 
+## What was generated vs ground truth — accuracy audit
+
+### `chitrak_asset.py`
+
+| Value | Source | Accurate? |
+|-------|--------|-----------|
+| `effort_limit=2.5` | Read directly from URDF `<limit effort="2.5"/>` | ✅ Exact |
+| `velocity_limit=8.0` | Read directly from URDF `<limit velocity="8.0"/>` | ✅ Exact |
+| `joint_names_expr` | Read directly from URDF joint names | ✅ Exact |
+| `pos=(0.0, 0.0, 0.25)` | Guessed spawn height | ⚠️ Approximate — verify visually |
+| `stiffness=25.0` | Copied from `UNITREE_A1_CFG` in `IsaacLab/source/isaaclab_assets/isaaclab_assets/robots/unitree.py` | ⚠️ Go1 value, not Chitrak-specific — tune during training |
+| `damping=0.5` | Copied from same Go1 config | ⚠️ Same — tune during training |
+| `fr/br_hip_pitch=+0.5, fl/bl_hip_pitch=-0.5` | Derived from URDF joint limits (mirrored limits observed) | ✅ Correct |
+| `fr/br_knee=-1.0, fl/bl_knee=+1.0` | Same derivation | ✅ Correct |
+
+### `chitrak_env_cfg.py`
+
+This file uses `DirectRLEnvCfg` — a lower-level base class. For actual training the manager-based approach (`LocomotionVelocityRoughEnvCfg`) is recommended instead (see Training Setup section). The reward weights below were cross-checked against the original WTW source in `chitrak_rl/mjlab_stock_gait/env_cfg.py`.
+
+| Value | Source | Accurate? |
+|-------|--------|-----------|
+| `dt=1/200, decimation=4` | Standard Isaac Lab locomotion default | ✅ Fine |
+| `num_envs=4096` | Standard Isaac Lab default | ✅ Fine |
+| `episode_length_s=20.0` | Made up | ⚠️ Reasonable default |
+| `num_observations=45` | Hand-counted: 3+3+3+12+12+12 | ✅ Correct for standard obs |
+| `num_actions=12` | 12 joints from URDF | ✅ Exact |
+| `action_scale=0.25` | Copied from Go1 flat env in `IsaacLab/source/isaaclab_tasks/.../go1/flat_env_cfg.py` | ⚠️ Go1 value |
+| `lin_vel_xy_exp=1.0` | From original `env_cfg.py`: `wtw_tracking_lin_vel weight=1.0` | ✅ Matches WTW |
+| `ang_vel_z_exp=0.5` | From original `env_cfg.py`: `wtw_tracking_ang_vel weight=0.5` | ✅ Matches WTW |
+| `lin_vel_z_penalty=-2.0` | **WRONG** — WTW uses `-0.02`, I used `-2.0` (100× too large) | ❌ Fix before training |
+| `ang_vel_xy_penalty=-0.05` | **WRONG** — WTW uses `-0.001`, I used `-0.05` (50× too large) | ❌ Fix before training |
+| `torque_penalty=-0.0001` | From WTW: `wtw_torques weight=-1e-4` | ✅ Matches WTW |
+| `dof_acc_penalty=-2.5e-7` | From WTW: `wtw_dof_acc weight=-2.5e-7` | ✅ Matches WTW |
+| `action_rate_penalty=-0.01` | From WTW: `wtw_action_rate weight=-0.01` | ✅ Matches WTW |
+| `feet_air_time=0.5` | Made up — WTW uses `4.0` for feet contact reward | ❌ Wrong |
+| `base_height_penalty=-1.0` | Made up — not in WTW at all | ❌ Remove or tune |
+| `target_base_height=0.22` | Made up | ❌ Remove or tune |
+| `command_cfg ranges` | Standard locomotion defaults | ⚠️ Reasonable |
+
+### Corrections to apply before training
+
+In `chitrak_env_cfg.py`, fix these reward weights to match WTW actual values from `mjlab_stock_gait/env_cfg.py`:
+```python
+lin_vel_z_penalty  = -0.02    # was -2.0
+ang_vel_xy_penalty = -0.001   # was -0.05
+feet_air_time      = 4.0      # was 0.5 (WTW: wtw_feet_contact weight=4.0)
+# remove base_height_penalty and target_base_height — not in WTW
+```
+
+Missing WTW rewards not ported to `chitrak_env_cfg.py` at all:
+- `wtw_action_smoothness_1` (weight=-0.1)
+- `wtw_action_smoothness_2` (weight=-0.1)
+- `wtw_collision` (weight=-5.0)
+- `wtw_dof_pos_limits` (weight=-10.0)
+- `wtw_dof_vel` (weight=-1e-4)
+- `wtw_jump` (weight=10.0)
+- `wtw_foot_contact` (weight=4.0)
+- `wtw_raibert_heuristic` (weight=-10.0)
+- `wtw_orientation_control` (weight=-5.0)
+- `wtw_foot_height` (weight=-30.0)
+
+These are all defined in `chitrak_rl/mjlab_stock_gait/ji22_reward_manager.py` and should be ported when building the full training env.
+
+---
+
 ## File tree (final state)
 
 ```
