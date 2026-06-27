@@ -3,8 +3,8 @@
 # Run once after cloning this repo on a fresh server.
 #
 # Usage:
-#   git clone https://github.com/YOUR_USERNAME/chitrak-isaaclab-setup.git
-#   cd chitrak-isaaclab-setup
+#   git clone https://github.com/mrmilohd/chitrak-rl.git /teamspace/studios/this_studio
+#   cd /teamspace/studios/this_studio
 #   bash setup.sh
 
 set -e
@@ -50,9 +50,6 @@ echo ""
 echo "Then inside the container:"
 echo "  export PYTHONPATH=/workspace/isaaclab/source/isaaclab:/workspace/isaaclab/source/chitrak_integration:\$PYTHONPATH"
 echo "  ./isaaclab.sh -p -m pip install flatdict"
-echo ""
-echo "If USD not yet generated, run:"
-echo "  ./isaaclab.sh -p /workspace/isaaclab/source/chitrak_integration/convert_urdf_to_usd.py"
 echo ""
 echo "Verify robot:"
 echo "  ./isaaclab.sh -p /workspace/isaaclab/source/chitrak_integration/verify_robot.py"

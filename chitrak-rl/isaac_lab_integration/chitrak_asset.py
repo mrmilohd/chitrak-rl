@@ -8,7 +8,7 @@ import isaaclab.sim as sim_utils
 from isaaclab.actuators import DCMotorCfg
 from isaaclab.assets.articulation import ArticulationCfg
 
-USD_PATH = "/teamspace/studios/this_studio/chitrak-rl/isaac_lab_integration/usd_output/chitrak.usd"
+USD_PATH = "/workspace/isaaclab/source/chitrak_integration/usd_output/chitrak.usd"
 
 CHITRAK_CFG = ArticulationCfg(
     spawn=sim_utils.UsdFileCfg(
@@ -33,8 +33,18 @@ CHITRAK_CFG = ArticulationCfg(
         pos=(0.0, 0.0, 0.25),
         joint_pos={
             ".*_hip_roll_joint": 0.0,
-            ".*_hip_pitch_joint": 0.5,
-            ".*_knee_joint": -1.0,
+            # FR/BR pitch: limits [0, 3.14]
+            "fr_hip_pitch_joint": 0.5,
+            "br_hip_pitch_joint": 0.5,
+            # FL/BL pitch: limits [-3.14, 0]
+            "fl_hip_pitch_joint": -0.5,
+            "bl_hip_pitch_joint": -0.5,
+            # FR/BR knee: limits [-3.14, 0]
+            "fr_knee_joint": -1.0,
+            "br_knee_joint": -1.0,
+            # FL/BL knee: limits [0, 3.14]
+            "fl_knee_joint": 1.0,
+            "bl_knee_joint": 1.0,
         },
         joint_vel={".*": 0.0},
     ),

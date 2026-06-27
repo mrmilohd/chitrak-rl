@@ -1,62 +1,167 @@
 # Chitrak → Isaac Lab Integration
 
-## Files
+Everything you need to get Chitrak running in Isaac Lab from a fresh server.
+USD is already pre-generated and committed — no conversion needed.
 
-| File | Purpose |
-|------|---------|
-| `chitrak_fixed.urdf` | Original URDF with mesh paths fixed for this server |
-| `convert_urdf_to_usd.py` | One-time conversion: URDF → USD (run inside container) |
-| `chitrak_asset.py` | Isaac Lab `ArticulationCfg` for Chitrak |
-| `chitrak_env_cfg.py` | Isaac Lab `DirectRLEnvCfg` for locomotion training |
+---
 
-## Step-by-step
+## Fresh session setup (run every time)
 
-### 1. Enter the Isaac Lab container
+### Step 1 — Clone this repo
+```bash
+git clone https://github.com/mrmilohd/chitrak-rl.git /teamspace/studios/this_studio
+cd /teamspace/studios/this_studio
+```
+
+### Step 2 — Run setup script (clones IsaacLab, patches docker, starts container)
+```bash
+bash setup.sh
+```
+This takes ~15 min on first run (downloads Isaac Sim image). Instant on repeat runs.
+
+### Step 3 — Enter the container
 ```bash
 cd /teamspace/studios/this_studio/IsaacLab/docker
 ./container.py enter
 ```
 
-### 2. Convert URDF to USD (one-time, takes ~1 min)
+### Step 4 — Set PYTHONPATH (every new container session)
 ```bash
-cd /workspace/isaaclab
-python /teamspace/studios/this_studio/chitrak-rl/isaac_lab_integration/convert_urdf_to_usd.py
-```
-Output: `isaac_lab_integration/usd_output/chitrak.usd`
-
-### 3. Verify the USD loaded correctly (optional sanity check)
-```bash
-cd /workspace/isaaclab
-python scripts/tools/check_urdf.py \
-  /teamspace/studios/this_studio/chitrak-rl/isaac_lab_integration/chitrak_fixed.urdf
+export PYTHONPATH=/workspace/isaaclab/source/isaaclab:/workspace/isaaclab/source/chitrak_integration:$PYTHONPATH
 ```
 
-### 4. Train
+### Step 5 — Install missing dep (once per container image)
 ```bash
-cd /workspace/isaaclab
-python scripts/reinforcement_learning/rsl_rl/train.py \
-  --task Chitrak-v0 \
-  --headless
+./isaaclab.sh -p -m pip install flatdict
 ```
-(You will need to register the env — see below.)
 
-## Registering the environment
+### Step 6 — Verify robot loads correctly
+```bash
+./isaaclab.sh -p /workspace/isaaclab/source/chitrak_integration/verify_robot.py
+```
 
-Add to `IsaacLab/source/isaaclab_tasks/isaaclab_tasks/direct/__init__.py`:
+Expected output:
+```
+JOINT NAMES (12 total):
+  [ 0] fr_hip_roll_joint
+  ...
+ACTUATORS:
+  Group: 'legs'  |  effort_limit: 2.5  |  velocity_limit: 8.0
+[OK] Chitrak loaded successfully!
+```
+
+---
+
+## Files reference
+
+| File | Purpose |
+|------|---------|
+| `chitrak_fixed.urdf` | URDF with corrected mesh paths |
+| `chitrak_asset.py` | `CHITRAK_CFG` — ArticulationCfg for Isaac Lab |
+| `chitrak_env_cfg.py` | DirectRLEnvCfg (obs/action/reward structure) |
+| `verify_robot.py` | Sanity check — prints joints, actuators, init state |
+| `record_fall.py` | Video recording (skip — headless camera hangs) |
+| `convert_urdf_to_usd.py` | URDF→USD conversion (already done, don't re-run) |
+| `usd_output/chitrak.usd` | Pre-generated USD file (ready to use) |
+
+---
+
+## Joint order (12 DOF)
+
+| Index | Joint | Limits |
+|-------|-------|--------|
+| 0 | fr_hip_roll_joint | -1.57 to 1.57 |
+| 1 | fr_hip_pitch_joint | 0 to 3.14 |
+| 2 | fr_knee_joint | -3.14 to 0 |
+| 3 | fl_hip_roll_joint | -1.57 to 1.57 |
+| 4 | fl_hip_pitch_joint | -3.14 to 0 ← mirrored |
+| 5 | fl_knee_joint | 0 to 3.14 ← mirrored |
+| 6 | br_hip_roll_joint | -1.57 to 1.57 |
+| 7 | br_hip_pitch_joint | 0 to 3.14 |
+| 8 | br_knee_joint | -3.14 to 0 |
+| 9 | bl_hip_roll_joint | -1.57 to 1.57 |
+| 10 | bl_hip_pitch_joint | -3.14 to 0 ← mirrored |
+| 11 | bl_knee_joint | 0 to 3.14 ← mirrored |
+
+⚠️ Left legs (fl, bl) have mirrored joint limits — initial positions must be negated vs right legs.
+
+---
+
+## Training setup
+
+### Create env config
+Create `/workspace/isaaclab/source/chitrak_integration/chitrak_rough_env_cfg.py`:
+
+```python
+from isaaclab.utils import configclass
+from isaaclab_tasks.manager_based.locomotion.velocity.velocity_env_cfg import LocomotionVelocityRoughEnvCfg
+from chitrak_asset import CHITRAK_CFG
+
+@configclass
+class ChitrakFlatEnvCfg(LocomotionVelocityRoughEnvCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.scene.robot = CHITRAK_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        self.scene.height_scanner.prim_path = "{ENV_REGEX_NS}/Robot/torso_link"
+        self.scene.terrain.terrain_type = "plane"
+        self.scene.terrain.terrain_generator = None
+        self.scene.height_scanner = None
+        self.observations.policy.height_scan = None
+        self.curriculum.terrain_levels = None
+        self.actions.joint_pos.scale = 0.25
+        self.terminations.base_contact.params["sensor_cfg"].body_names = "torso_link"
+        # reward tuning
+        self.rewards.track_lin_vel_xy_exp.weight = 1.5
+        self.rewards.flat_orientation_l2.weight = -2.5
+        self.rewards.feet_air_time.weight = 0.25
+        self.rewards.dof_torques_l2.weight = -1.0e-5
+        self.rewards.dof_acc_l2.weight = -2.5e-7
+        self.rewards.action_rate_l2.weight = -0.01
+        self.rewards.undesired_contacts = None
+```
+
+### Register env
+Add to `IsaacLab/source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/__init__.py`:
 ```python
 import gymnasium as gym
-from chitrak_env_cfg import ChitrakEnvCfg
+from chitrak_rough_env_cfg import ChitrakFlatEnvCfg
 
 gym.register(
-    id="Chitrak-v0",
-    entry_point="isaaclab.envs:DirectRLEnv",
-    kwargs={"cfg": ChitrakEnvCfg()},
+    id="Isaac-Velocity-Flat-Chitrak-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    kwargs={"cfg": ChitrakFlatEnvCfg()},
+    disable_env_checker=True,
 )
 ```
 
-## Joint order (12 DOF)
+### Train
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
+  --task Isaac-Velocity-Flat-Chitrak-v0 \
+  --num_envs 4096 \
+  --headless
 ```
-fr_hip_roll_joint   fl_hip_roll_joint   br_hip_roll_joint   bl_hip_roll_joint
-fr_hip_pitch_joint  fl_hip_pitch_joint  br_hip_pitch_joint  bl_hip_pitch_joint
-fr_knee_joint       fl_knee_joint       br_knee_joint       bl_knee_joint
+
+### Play back trained policy
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py \
+  --task Isaac-Velocity-Flat-Chitrak-v0 \
+  --num_envs 32 \
+  --checkpoint logs/rsl_rl/chitrak_flat/*/model_*.pt
 ```
+
+---
+
+## Actuator tuning
+
+In `chitrak_asset.py`:
+
+| Param | Current | Effect |
+|-------|---------|--------|
+| `stiffness` | 25.0 | Position gain (Kp) — higher = stiffer, more responsive |
+| `damping` | 0.5 | Velocity damping (Kd) — higher = less oscillation |
+| `effort_limit` | 2.5 Nm | Max torque (from URDF) |
+| `velocity_limit` | 8.0 rad/s | Max joint speed (from URDF) |
+
+- Robot shaking/oscillating → increase `damping`
+- Robot floppy/slow → increase `stiffness`

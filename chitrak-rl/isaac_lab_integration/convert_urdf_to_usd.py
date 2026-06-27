@@ -3,7 +3,7 @@ Run this script INSIDE the Isaac Lab container to convert chitrak_fixed.urdf →
 
 Usage (from inside the container):
     cd /workspace/isaaclab
-    python /teamspace/studios/this_studio/chitrak-rl/isaac_lab_integration/convert_urdf_to_usd.py
+    python /workspace/isaaclab/source/chitrak_integration/convert_urdf_to_usd.py
 """
 
 import argparse
@@ -18,8 +18,8 @@ simulation_app = app_launcher.app
 
 from isaaclab.sim.converters import UrdfConverter, UrdfConverterCfg
 
-URDF_PATH = "/teamspace/studios/this_studio/chitrak-rl/isaac_lab_integration/chitrak_fixed.urdf"
-USD_OUTPUT_DIR = "/teamspace/studios/this_studio/chitrak-rl/isaac_lab_integration/usd_output"
+URDF_PATH = "/workspace/isaaclab/source/chitrak_integration/chitrak_fixed.urdf"
+USD_OUTPUT_DIR = "/workspace/isaaclab/source/chitrak_integration/usd_output"
 
 cfg = UrdfConverterCfg(
     asset_path=URDF_PATH,
