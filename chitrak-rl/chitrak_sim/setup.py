@@ -1,0 +1,36 @@
+from setuptools import find_packages, setup
+from glob import glob
+
+package_name = 'chitrak_sim'
+
+setup(
+    name=package_name,
+    version='0.0.0',
+    packages=find_packages(exclude=['test']),
+    data_files=[
+        ('share/ament_index/resource_index/packages',
+            ['resource/' + package_name]),
+        ('share/' + package_name, ['package.xml']),
+
+        # Install config, urdf and world files
+        ('share/' + package_name + '/config', glob('config/*.yaml')),
+        ('share/' + package_name + '/urdf', glob('urdf/*.xacro')),
+        ('share/' + package_name + '/worlds', glob('worlds/*.sdf')),
+    ],
+    install_requires=['setuptools'],
+    zip_safe=True,
+    maintainer='Shravan Deva',
+    maintainer_email='devashravan7@gmail.com',
+    description='Simulation package for Chitrak',
+    license='MIT',
+    extras_require={
+        'test': [
+            'pytest',
+        ],
+    },
+    entry_points={
+        'console_scripts': [
+            'joint_angles_translator = chitrak_sim.joint_angles_translator:main',
+        ],
+    },
+)

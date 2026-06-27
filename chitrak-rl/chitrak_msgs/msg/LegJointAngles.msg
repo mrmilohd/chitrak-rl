@@ -1,0 +1,3 @@
+float64 hip_angle
+float64 thigh_angle
+float64 calf_angle

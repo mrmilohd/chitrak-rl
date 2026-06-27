@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro"  name="chitrak">
+    <xacro:include filename="$(find chitrak_description)/urdf/chitrak.xacro"/>
+
+    <!-- Gazebo Specific Tags-->
+
+    <!-- Friction -->
+    <gazebo reference="fr_calf_link">
+        <mu1>0.9</mu1>
+        <mu2>0.9</mu2>
+    </gazebo>
+    <gazebo reference="bl_calf_link">
+        <mu1>0.9</mu1>
+        <mu2>0.9</mu2>
+    </gazebo>
+    <gazebo reference="fl_calf_link">
+        <mu1>0.9</mu1>
+        <mu2>0.9</mu2>
+    </gazebo>
+    <gazebo reference="br_calf_link">
+        <mu1>0.9</mu1>
+        <mu2>0.9</mu2>
+    </gazebo>
+
+    <!-- Joint Position Control Plugins -->
+    <xacro:macro name="joint_controller" params="joint_name topic">
+        <gazebo>
+            <plugin
+                filename="ignition-gazebo-joint-position-controller-system"
+                name="ignition::gazebo::systems::JointPositionController">
+                <joint_name>${joint_name}</joint_name>
+                <topic>${topic}</topic>
+                <p_gain>1</p_gain>
+                <i_gain>0.1</i_gain>
+                <d_gain>0.01</d_gain>
+                <i_min>-1</i_min>
+                <i_max>1</i_max>
+                <cmd_min>-1000</cmd_min>
+                <cmd_max>1000</cmd_max>
+            </plugin>
+        </gazebo>
+    </xacro:macro>
+    <!-- Front Right -->
+    <xacro:joint_controller joint_name="fr_hip_roll_joint" topic="/fr/hip_roll_angle"/>
+    <xacro:joint_controller joint_name="fr_hip_pitch_joint" topic="/fr/hip_pitch_angle"/>
+    <xacro:joint_controller joint_name="fr_knee_joint" topic="/fr/knee_angle"/>
+    <!-- Back Left -->
+    <xacro:joint_controller joint_name="bl_hip_roll_joint" topic="/bl/hip_roll_angle"/>
+    <xacro:joint_controller joint_name="bl_hip_pitch_joint" topic="/bl/hip_pitch_angle"/>
+    <xacro:joint_controller joint_name="bl_knee_joint" topic="/bl/knee_angle"/>
+    <!-- Front Left -->
+    <xacro:joint_controller joint_name="fl_hip_roll_joint" topic="/fl/hip_roll_angle"/>
+    <xacro:joint_controller joint_name="fl_hip_pitch_joint" topic="/fl/hip_pitch_angle"/>
+    <xacro:joint_controller joint_name="fl_knee_joint" topic="/fl/knee_angle"/>
+    <!-- Back Right -->
+    <xacro:joint_controller joint_name="br_hip_roll_joint" topic="/br/hip_roll_angle"/>
+    <xacro:joint_controller joint_name="br_hip_pitch_joint" topic="/br/hip_pitch_angle"/>
+    <xacro:joint_controller joint_name="br_knee_joint" topic="/br/knee_angle"/>
+
+    <gazebo>
+        <plugin
+            filename="ignition-gazebo-joint-state-publisher-system"
+            name="ignition::gazebo::systems::JointStatePublisher">
+            <topic>/chitrak/joint_states</topic>
+        </plugin>
+    </gazebo>
+</robot>

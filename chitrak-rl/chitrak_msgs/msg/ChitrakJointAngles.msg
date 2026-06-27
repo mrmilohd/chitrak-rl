@@ -1,0 +1,4 @@
+LegJointAngles front_right
+LegJointAngles back_left
+LegJointAngles front_left
+LegJointAngles back_right

@@ -1,0 +1,12 @@
+/**:
+  ros__parameters:
+    geometry:
+      length: 0.30
+      width: 0.20
+      thigh_length: 0.13
+      shin_length: 0.15
+    gait:
+      min_step_frequency: 0.25
+      max_step_frequency: 1.0
+      max_step_length: 0.05
+      step_height: 0.05

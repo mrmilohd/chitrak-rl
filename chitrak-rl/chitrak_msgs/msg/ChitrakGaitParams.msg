@@ -1,0 +1,4 @@
+LegGaitParams front_right
+LegGaitParams back_left
+LegGaitParams front_left
+LegGaitParams back_right
