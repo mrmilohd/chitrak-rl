@@ -1,46 +1,54 @@
 # Chitrak Isaac Lab Project
 
-## What this is
-Integrating the Chitrak quadruped robot (mars-iitr/chitrak) into Isaac Lab for RL locomotion training.
+## Repo
+**github.com/mrmilohd/chitrak-rl** — everything is here, plug and play.
 
-## Repo locations
-- `chitrak-rl/` — original ROS + MuJoCo RL code (mars-iitr/chitrak + mrmilohd/chitrak-rl)
-- `IsaacLab/` — Isaac Lab v2.3.2 (isaac-sim/IsaacLab)
-- `IsaacLab/source/chitrak_integration/` — our integration files
+## What was done
+1. Cloned `mars-iitr/chitrak` and `mrmilohd/chitrak-rl` into `chitrak-rl/`
+2. Cloned `isaac-sim/IsaacLab` at tag `v2.3.2`
+3. Fixed URDF mesh paths (were hardcoded to `/home/aaditya/Desktop/...`)
+4. Added `chitrak-rl` as a Docker bind mount in `IsaacLab/docker/docker-compose.yaml` → `/workspace/chitrak-rl`
+5. Converted `chitrak_fixed.urdf` → USD using `UrdfConverter` inside the container
+6. Verified robot loads: 12 joints, correct actuators, correct init state
+7. Found and fixed mirrored joint limits on left legs (fl, bl)
+8. Pushed everything to GitHub with `setup.sh` for one-command restore
 
-## Integration files
-- `chitrak_fixed.urdf` — URDF with corrected mesh paths (container: `/workspace/isaaclab/source/chitrak_integration/`)
-- `chitrak_asset.py` — `CHITRAK_CFG` ArticulationCfg
-- `chitrak_env_cfg.py` — DirectRLEnvCfg (backup, not used for training)
-- `convert_urdf_to_usd.py` — one-time URDF→USD conversion (already done)
-- `usd_output/chitrak.usd` — converted USD (already generated)
-- `verify_robot.py` — sanity check script (confirmed working)
-- `record_fall.py` — video recording (camera gets stuck headless, skip for now)
-
-## Robot specs
-- 12 DOF quadruped (3 joints/leg × 4 legs)
-- Joint naming: `{fr,fl,br,bl}_{hip_roll,hip_pitch,knee}_joint`
-- Left legs have mirrored joint limits vs right legs
-- Actuators: effort_limit=2.5 Nm, velocity_limit=8.0 rad/s
-- URDF meshes: `chitrak-rl/chitrak_description/meshes/*.STL`
-
-## Container setup
+## Fresh session restore
 ```bash
-cd /teamspace/studios/this_studio/IsaacLab/docker
-./container.py enter
+git clone https://github.com/mrmilohd/chitrak-rl.git /teamspace/studios/this_studio
+cd /teamspace/studios/this_studio
+bash setup.sh
 ```
 
-## Always set PYTHONPATH inside container
+Then inside container:
 ```bash
 export PYTHONPATH=/workspace/isaaclab/source/isaaclab:/workspace/isaaclab/source/chitrak_integration:$PYTHONPATH
+./isaaclab.sh -p -m pip install flatdict
+./isaaclab.sh -p /workspace/isaaclab/source/chitrak_integration/verify_robot.py
 ```
 
-## Known issues
-- `No module named 'isaaclab'` — fix with PYTHONPATH export above
-- Camera/viewport hangs headless — skip record_fall.py for now
-- Video recording needs a real display or VNC setup
+## Key paths
+| What | Host path | Container path |
+|------|-----------|----------------|
+| Integration files | `IsaacLab/source/chitrak_integration/` | `/workspace/isaaclab/source/chitrak_integration/` |
+| Robot meshes | `chitrak-rl/chitrak_description/meshes/` | `/workspace/chitrak-rl/chitrak_description/meshes/` |
+| USD file | `chitrak-rl/isaac_lab_integration/usd_output/chitrak.usd` | `/workspace/isaaclab/source/chitrak_integration/usd_output/chitrak.usd` |
+| Isaac Lab docker | `IsaacLab/docker/` | — |
 
-## Next steps
-- Register ChitrakEnv as a Gym env
-- Set up RSL-RL training config
-- Wire up rewards (Walk These Ways style from mjlab_stock_gait)
+## Robot specs
+- 12 DOF quadruped (3 joints/leg × 4 legs: hip_roll, hip_pitch, knee)
+- Joint naming: `{fr,fl,br,bl}_{hip_roll,hip_pitch,knee}_joint`
+- Actuators: `DCMotorCfg`, effort=2.5 Nm, velocity=8.0 rad/s, stiffness=25.0, damping=0.5
+- ⚠️ Left legs (fl, bl) have MIRRORED joint limits vs right legs — init positions must be negated
+
+## Known issues
+- `No module named 'isaaclab'` → fix with PYTHONPATH export above
+- `No module named 'flatdict'` → `./isaaclab.sh -p -m pip install flatdict`
+- Camera/viewport hangs headless → skip `record_fall.py`, use MuJoCo renderer instead
+- USD conversion already done — don't re-run `convert_urdf_to_usd.py`
+
+## What's next
+- Create `chitrak_rough_env_cfg.py` subclassing `LocomotionVelocityRoughEnvCfg`
+- Register env as `Isaac-Velocity-Flat-Chitrak-v0` in isaaclab_tasks
+- Train with RSL-RL: `./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Isaac-Velocity-Flat-Chitrak-v0 --headless`
+- Tune rewards and actuator stiffness/damping based on training behavior
